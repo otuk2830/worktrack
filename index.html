@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f3f4f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WorkTrack">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>WorkTrack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: plain and friendly, a pocket tool you check on the bus
+   IDEA: a shift rota pinned on the warehouse wall: sun-yellow earlies, evening-indigo lates
+   PICTURE: your next pay in one big number; the month as a grid of coloured days
+   COLOUR and TYPE: clean paper ground, cobalt for actions, sun yellow and indigo for shifts, coral for leave; Hanken Grotesk
+   LAYOUT: one narrow column, everything stacked, tab bar at the bottom, edits open in a sheet from below */
+:root{color-scheme:light;--bg:#f3f4f7;--card:#fff;--soft:#eceef3;--line:#e2e5eb;--ink:#14171d;--mute:#667085;--acc:#2f5bea;--accInk:#fff;--accSoft:#e3e9fd;
+ --early:#ffc84a;--earlyInk:#3a2a00;--late:#3d41a3;--lateInk:#fff;--leave:#ff7d6e;--leaveInk:#3a0d07;--neg:#c4304a;--shadow:0 1px 2px rgba(16,24,40,.06),0 1px 8px rgba(16,24,40,.04)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#0f1115;--card:#1a1d23;--soft:#262a32;--line:#2c313a;--ink:#f1f3f7;--mute:#9aa3b2;--acc:#86a2ff;--accInk:#0f1115;--accSoft:#25304f;--late:#6d72e6;--neg:#ff8a9b;--shadow:none}}
+:root[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#1a1d23;--soft:#262a32;--line:#2c313a;--ink:#f1f3f7;--mute:#9aa3b2;--acc:#86a2ff;--accInk:#0f1115;--accSoft:#25304f;--late:#6d72e6;--neg:#ff8a9b;--shadow:none}
+*{box-sizing:border-box;min-width:0}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Hanken Grotesk",system-ui,-apple-system,sans-serif;overflow-x:clip}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+main{max-width:600px;margin:auto;padding:18px 16px 120px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--line);padding:4px 6px calc(4px + env(safe-area-inset-bottom))}
+nav.tabs .in{display:flex;max-width:600px;margin:auto}
+nav.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:54px;padding:6px 0;border:0;background:none;color:var(--mute);font-size:12px;font-weight:600}
+nav.tabs button.on{color:var(--acc)}
+nav.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.top{display:flex;align-items:center;gap:12px;margin:6px 0 16px}
+.top .t{flex:1;min-width:0}.top.c .t{text-align:center}
+h1{font-size:28px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.02em;text-wrap:balance}
+h2{font-size:17px;margin:0;font-weight:700}
+.sub,.lab{font-size:14px;color:var(--mute)}
+.circ{flex:none;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:22px;line-height:1;display:grid;place-items:center}
+.circ:disabled{opacity:.3}
+.card{display:block;width:100%;text-align:left;background:var(--card);border:0;border-radius:20px;padding:18px;margin:0 0 12px;box-shadow:var(--shadow);color:var(--ink)}
+:root[data-theme=dark] .card{border:1px solid var(--line)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .card{border:1px solid var(--line)}}
+.hero{background:var(--acc);color:var(--accInk);border:0!important}
+.hero .lab{color:inherit;opacity:.8}
+.big{font-size:clamp(46px,13vw,64px);font-weight:800;letter-spacing:-.035em;line-height:1;margin:10px 0 6px;white-space:nowrap}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px}
+.trio div{background:rgba(255,255,255,.16);border-radius:12px;padding:8px 10px}
+.trio small{display:block;font-size:12px;opacity:.8}.trio b{font-size:15px;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:50px;padding:0 20px;border-radius:14px;border:0;background:var(--soft);color:var(--ink);font-weight:700;white-space:nowrap}
+.btn.pri{background:var(--acc);color:var(--accInk)}
+.btn.blk{display:flex;width:100%}
+.btn.xl{min-height:58px;font-size:18px;margin-bottom:12px}
+.btn.link{background:none;color:var(--acc);padding:0 2px;min-height:44px}
+.btn.red{background:none;color:var(--neg);padding:0 2px;min-height:44px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile .v{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:4px 0 2px;line-height:1.15}
+.go{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.go .v{font-size:22px;font-weight:800}
+.chev{font-size:22px;color:var(--mute)}
+.ln{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.ln:first-child{border-top:0;padding-top:2px}
+.ln>span:first-child{flex:1;min-width:0}
+.ln .r{text-align:right;white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+.ln .s{display:block;font-size:13px;color:var(--mute);font-weight:400}
+.ln.tot{font-weight:800;font-size:18px}
+.ln.btnln{width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:var(--ink);padding-left:0;padding-right:0}
+.sec{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--mute);margin:18px 0 4px}
+.neg{color:var(--neg)}
+.tag{display:inline-block;font-size:12px;font-weight:700;line-height:1.6;padding:0 8px;border-radius:99px;background:var(--soft);color:var(--mute);vertical-align:1px;white-space:nowrap}
+.tag.acc{background:var(--accSoft);color:var(--acc)}
+.hint{background:var(--accSoft);color:var(--ink);border-radius:14px;padding:12px 14px;margin:0 0 12px;font-size:15px}
+.bar{height:10px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden;display:flex;margin:14px 0 8px}
+.bar i{display:block;height:100%}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dh{text-align:center;font-size:12px;font-weight:700;color:var(--mute);padding-bottom:2px}
+.day{position:relative;height:clamp(48px,12.5vw,62px);border:0;border-radius:12px;background:var(--card);color:var(--ink);font-weight:700;font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;box-shadow:var(--shadow)}
+.day.E{background:var(--early);color:var(--earlyInk)}
+.day.L{background:var(--late);color:var(--lateInk)}
+.day.AL{background:var(--leave);color:var(--leaveInk)}
+.day.HE{background:linear-gradient(135deg,var(--leave) 50%,var(--early) 50%);color:var(--leaveInk)}
+.day.HL{background:linear-gradient(135deg,var(--leave) 50%,var(--late) 50%);color:var(--leaveInk)}
+.day.SK{background:transparent;box-shadow:inset 0 0 0 1.5px var(--mute)}
+.day.BH{background:transparent;box-shadow:inset 0 0 0 1.5px var(--mute)}
+.day small{font-size:9.5px;font-weight:700;color:var(--mute);line-height:1}
+.day.out{opacity:.3}
+.day.today{outline:2.5px solid var(--ink);outline-offset:2px}
+.day .ot{font-size:10.5px;line-height:1;padding:2px 5px;border-radius:99px;background:var(--ink);color:var(--bg);font-weight:800}
+.day.bs::before{content:"";position:absolute;left:-5px;top:8px;bottom:8px;width:3px;border-radius:2px;background:var(--acc)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--mute);margin:14px 0 16px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:5px}
+.ov{position:fixed;inset:0;background:rgba(10,12,18,.45);display:none;align-items:flex-end;justify-content:center;z-index:30}
+.ov.on{display:flex}
+.sheet{background:var(--card);width:min(560px,100%);max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:10px 18px calc(18px + env(safe-area-inset-bottom))}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 10px}
+@media(min-width:700px){.ov{align-items:center}.sheet{border-radius:24px}}
+@media(prefers-reduced-motion:no-preference){.ov.on .sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(30px);opacity:.5}}}
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:14px}.sh .t{flex:1;text-align:center}
+.f{display:block;margin:0 0 14px}
+.f>span{display:block;font-size:14px;font-weight:600;color:var(--mute);margin-bottom:6px}
+input,select,textarea{display:block;width:100%;max-width:100%;font:inherit;font-size:17px;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);-webkit-appearance:none;appearance:none;margin:0}
+input[type=date]{line-height:48px;text-align:left}
+input::-webkit-date-and-time-value{text-align:left}
+textarea{padding:12px;min-height:120px;font-size:14px}
+:focus-visible{outline:2.5px solid var(--acc);outline-offset:2px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 12px}
+.seg{display:flex;background:var(--soft);border-radius:14px;padding:4px;gap:4px;margin-bottom:14px}
+.seg button{flex:1;min-height:44px;border:0;border-radius:10px;background:transparent;font-weight:700;padding:4px 6px;line-height:1.15}
+.seg button.on{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.seg button small{display:block;font-weight:500;font-size:12px;color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chips button{min-height:42px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:15px}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.step{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.step button{flex:none;width:58px;height:58px;border-radius:16px;border:0;background:var(--soft);font-size:28px;font-weight:600}
+.step .val{flex:1;text-align:center;font-size:44px;font-weight:800;letter-spacing:-.03em}
+.yt{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}.yt th,.yt td{padding:11px 0;border-top:1px solid var(--line);text-align:left;font-weight:500}.yt tr:first-child th{border-top:0;padding-top:0;font-size:14px;color:var(--mute);font-weight:700}.yt .n{text-align:right;white-space:nowrap;padding-left:12px}.yt .s{display:block;font-weight:500;font-size:12px}.yt .tk td{font-weight:800;font-size:17px}
+.bars{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;align-items:end;height:150px;margin:8px 0 6px;border-bottom:1px solid var(--line)}
+.bars button{height:100%;border:0;background:none;padding:0;display:flex;align-items:flex-end;cursor:pointer}
+.bars i{display:block;width:100%;border-radius:4px 4px 0 0;background:var(--acc);min-height:2px}
+.bars i.e{background:var(--accSoft);box-shadow:inset 0 0 0 1.5px var(--acc)}
+.bars button.sel i{background:var(--ink)}.bars button.sel i.e{background:var(--soft);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.bl{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px;font-size:11px;color:var(--mute);text-align:center;font-weight:700}
+.cap{display:flex;justify-content:space-between;align-items:baseline;gap:8px;min-height:24px}.cap b{font-size:18px;white-space:nowrap}
+.key{display:flex;gap:14px;font-size:12px;color:var(--mute);margin-top:8px}.key i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.pv{background:var(--soft);border-radius:14px;padding:12px 14px;margin-bottom:16px}
+.pv b{font-size:22px}
+.lbl{font-size:14px;font-weight:700;color:var(--mute);margin:4px 0 8px}
+.mcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:12px}
+.md{height:44px;border:0;border-radius:10px;background:transparent;font-weight:700;font-size:15px;position:relative}
+.md.in{background:var(--accSoft)}
+.md.edge{background:var(--acc);color:var(--accInk)}
+.md.pay::after{content:"£";position:absolute;right:3px;top:1px;font-size:10px;font-weight:800;color:var(--neg)}
+.md.payd{box-shadow:inset 0 0 0 2px var(--neg)}
+.md.out{opacity:.35}
+.flash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:700;z-index:40;max-width:90vw;text-align:center}
+.foot{text-align:center;font-size:13px;color:var(--mute);margin-top:18px}
+@media(max-width:380px){.trio b{font-size:13.5px}.day{font-size:14px}.cal{gap:4px}.day .ot{font-size:9.5px;padding:2px 3px}}
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+<nav class="tabs" aria-label="Sections"><div class="in">
+ <button data-tab="home"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Pay</button>
+ <button data-tab="cal"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Rota</button>
+ <button data-tab="leave"><svg viewBox="0 0 24 24"><path d="M4 20h16M6 20c0-6 3-10 6-10s6 4 6 10M12 10V4M9 6l3-2 3 2"/></svg>Holidays</button>
+ <button data-tab="tax"><svg viewBox="0 0 24 24"><path d="M4 21V8l8-5 8 5v13z"/><path d="M9 21v-6h6v6M8 11h8"/></svg>Tax</button>
+ <button data-tab="set"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Setup</button>
+</div></nav>
+<div class="ov" id="ov"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<script>
+{
+/* ================= helpers ================= */
+const CATS={b15:'Basic 1.5',b2:'Basic DB',s15:'Basic 1/6 Shift x 1.5',s2:'Basic 1/6 Shift x 2'};
+const CORD=['b15','b2','s15','s2'];
+const STS={work:'Worked shift',off:'Day off',leave:'Holiday',half:'Half-day holiday',hrs:'Holiday (hours)',sick:'Sick',bank:'Bank holiday'};
+const isLv=st=>st==='leave'||st==='half'||st==='hrs';
+const lvFrac=x=>!x?0:x.st==='leave'?1:x.st==='half'?.5:x.st==='hrs'?(x.lvm|0)/S.set.dayMins:0;
+const pad=n=>String(n).padStart(2,'0');
+const D=s=>{const[y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)};
+const iso=t=>new Date(t).toISOString().slice(0,10);
+const add=(s,n)=>iso(D(s)+n*864e5);
+const dow=s=>new Date(D(s)).getUTCDay();
+const todayISO=()=>{const n=new Date();return n.getFullYear()+'-'+pad(n.getMonth()+1)+'-'+pad(n.getDate())};
+const fd=(s,o)=>s?new Date(D(s)).toLocaleDateString('en-GB',Object.assign({timeZone:'UTC',day:'numeric',month:'short'},o||{})):'TBC';
+const addM=(pm,k)=>{let[y,m]=pm.split('-').map(Number);m+=k;while(m>12){m-=12;y++}while(m<1){m+=12;y--}return y+'-'+pad(m)};
+const pmName=(pm,short)=>new Date(D(pm+'-01')).toLocaleDateString('en-GB',{timeZone:'UTC',month:short?'short':'long',year:'numeric'});
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* exact decimal parsing: "27.07405" -> 2707405 (dp=5); money dp=2 -> pennies. Half-up on the next digit. */
+function fixed(s,dp){s=String(s??'').trim().replace(/[£,\s]/g,'').replace('−','-');if(s===''||s==='-'||!/^-?\d*(\.\d*)?$/.test(s))return NaN;const neg=s[0]==='-';if(neg)s=s.slice(1);const[a,b='']=s.split('.');const k=(b+'0'.repeat(dp+1)).slice(0,dp+1);let v=parseInt(a||'0',10)*10**dp+parseInt(k.slice(0,dp)||'0',10);if(+k[dp]>=5)v+=1;return neg?-v:v}
+const R5=s=>fixed(s,5), P=s=>fixed(s,2);
+const divHU=(n,d)=>n<0?-divHU(-n,d):Math.floor((2*n+d)/(2*d));
+const money=p=>isNaN(p)?'—':(p<0?'−':'')+'£'+(Math.abs(p)/100).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+const hrs=m=>(Math.round(m/60*100)/100)+'h';
+const dd=n=>String(Math.round(n*100)/100);
+const lineAmt=(mins,rate)=>divHU(mins*R5(rate),60000);
+const uid=()=>Math.random().toString(36).slice(2,10);
+
+/* ================= seed data ================= */
+function seedBlocks(){
+ const B=[['2026-01','2025-11-23','2025-12-27','2026-01-27','2026-01-07'],['2026-02','2025-12-28','2026-01-24','2026-02-24','2026-01-28'],['2026-03','2026-01-25','2026-02-21','2026-03-26','2026-02-25'],['2026-04','2026-02-22','2026-03-28','2026-04-27','2026-04-01'],['2026-05','2026-03-29','2026-04-25','2026-05-26','2026-04-29'],['2026-06','2026-04-26','2026-05-23','2026-06-25','2026-05-27'],['2026-07','2026-05-24','2026-06-27','2026-07-28','2026-07-01'],['2026-08','2026-06-28','2026-07-25','2026-08-26','2026-07-29'],['2026-09','2026-07-26','2026-08-22','2026-09-25','2026-08-26'],['2026-10','2026-08-23','2026-09-26','2026-10-27','2026-09-30'],['2026-11','2026-09-27','2026-10-24','2026-11-25','2026-10-28'],['2026-12','2026-10-25','2026-11-21','','2026-11-25']].map(([pm,start,end,pay,appr])=>({pm,start,end,pay,appr,draft:false}));
+ const W=[5,4,4,5,4,4,5,4,4,5,4,4];let s='2026-11-22';
+ for(let i=0;i<12;i++){const e=add(s,W[i]*7-1);B.push({pm:'2027-'+pad(i+1),start:s,end:e,pay:'',appr:'',draft:true});s=add(e,1)}
+ return B;
+}
+const SEED=()=>({v:1,
+ set:{anchor:'2026-11-23',anchorShift:'E',workDays:[1,2,3,4,5],dayMins:450,thr:225,taxCode:'1257L',lyM:1,lyD:1,hcRef:84,hcDiv:60},
+ rates:[{id:'r1',from:'2000-01-01',payFrom:'2000-01',base:'0.00',prem:'0',b15:'0',b2:'0',s15:'0',s2:'0'}],
+ blocks:seedBlocks(),
+ tax:{'2026':{pt:'1048',uel:'4189',ni1:'8',ni2:'2',band:'37700',addl:'125140'}},
+ days:{},
+ leave:{'2026':{ent:'',carry:'0',open:'0'}},
+ purchases:[],
+ adj:{},
+ actuals:{}
+});
+/* six real payslips, used only by Settings → Check the maths */
+const FIX=[];
+/* ================= storage ================= */
+const KEY='worktrack.v1';
+function normalize(o){const d=SEED();for(const[k,a]of Object.entries(o.actuals||{})){const sa=d.actuals[k];if(sa&&a.ytdG===sa.ytdG&&!a.ytdN){a.ytdN=sa.ytdN;a.ytdNet=sa.ytdNet}}if(o.set&&o.set.thr===240&&!o.set.thrV2){o.set.thr=225}if(o.set)o.set.thrV2=1;for(const k of Object.keys(d))if(o[k]==null)o[k]=d[k];o.set=Object.assign(d.set,o.set);return o}
+function loadLocal(){try{const j=localStorage.getItem(KEY);if(j){const o=JSON.parse(j);if(o&&o.v===1)return o}}catch(e){}return null}
+let S=normalize(loadLocal()||SEED());
+let cloud=null,syncState='device',saveTimer=null,writing=false,again=false;
+function syncLabel(){const el=document.getElementById('sync');if(el)el.textContent={device:'Saved on this device',saving:'Saving…',cloud:'Synced to your account',err:'Saved on this device only'}[syncState]}
+function save(){S.updated=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(cloud){clearTimeout(saveTimer);saveTimer=setTimeout(push,900)}}
+async function push(){if(!cloud)return;if(writing){again=true;return}writing=true;syncState='saving';syncLabel();
+ try{await cloud.set({json:JSON.stringify(S),updated:S.updated||0});syncState='cloud'}catch(e){syncState='err'}
+ writing=false;syncLabel();if(again){again=false;push()}}
+async function initCloud(){try{
+ if(!window.claude||typeof window.claude.use!=='function')return;
+ const[db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);if(!db||!user)return;
+ const id=await user.id();if(!id)return;
+ const ref=db.doc('data/users/'+id+'/worktrack');const snap=await ref.get();cloud=ref;
+ if(snap.exists){const o=JSON.parse(snap.data().json||'null');
+  if(o&&o.v===1&&(o.updated||0)>=(S.updated||0)){S=normalize(o);ensureBlocks();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}render()}else if(S.updated)push()}
+ else if(S.updated)push();
+ syncState='cloud';syncLabel()}catch(e){cloud=null;syncState='device';syncLabel()}}
+
+/* ================= engine ================= */
+const byFrom=()=>[...S.rates].sort((a,b)=>a.from<b.from?-1:a.from>b.from?1:0);
+function rateAt(d){const R=byFrom();let r=R[0];for(const x of R)if(x.from<=d)r=x;return r}
+function baseFor(pm){const R=[...S.rates].sort((a,b)=>a.payFrom<b.payFrom?-1:1);let r=R[0];for(const x of R)if(x.payFrom<=pm)r=x;return r}
+const isWD=d=>S.set.workDays.includes(dow(d));
+const monT=d=>D(d)-((dow(d)+6)%7)*864e5;
+function rotaShift(d){const w=Math.round((monT(d)-monT(S.set.anchor))/(7*864e5));return((w%2)+2)%2===0?S.set.anchorShift:(S.set.anchorShift==='E'?'L':'E')}
+const shiftOf=d=>S.days[d]?.shift||rotaShift(d);
+const defSt=d=>isWD(d)?'work':'off';
+const statusOf=d=>S.days[d]?.st||defSt(d);
+function classify(d,x){const m=x.ot|0;if(m<=0)return null;const st=x.st||defSt(d);
+ const reg=st==='work'?+S.set.dayMins:st==='half'?S.set.dayMins/2:st==='hrs'?Math.max(0,S.set.dayMins-(x.lvm|0)):0;
+ const mul=+x.mul||(dow(d)===0?2:1.5);const total=reg+m;const elig=total>=S.set.thr;
+ const cat=x.cat||(elig?(mul===2?'s2':'s15'):(mul===2?'b2':'b15'));const rate=rateAt(d)[cat];
+ return{m,mul,cat,rate,elig,total,reg,pay:m*R5(rate)/60000,forced:!!x.cat}}
+const otInfo=d=>S.days[d]?classify(d,S.days[d]):null;
+const sortedBlocks=()=>[...S.blocks].sort((a,b)=>a.start<b.start?-1:1);
+const blockOf=d=>S.blocks.find(b=>b.start<=d&&d<=b.end);
+const blockPm=pm=>S.blocks.find(b=>b.pm===pm);
+function hcEst(b){let t=0;for(let d=b.start;d<=b.end;d=add(d,1)){const st=statusOf(d);if(!isLv(st)||!isWD(d))continue;
+ let w=0;for(let k=1;k<=S.set.hcRef;k++){const o=otInfo(add(d,-k));if(o)w+=o.pay}t+=w/S.set.hcDiv*lvFrac(S.days[d])}return Math.round(t)}
+function buyFor(y){const ex=S.purchases.find(p=>+p.ly===y);if(ex)return ex;const pv=S.purchases.filter(p=>+p.ly<y).sort((a,b)=>b.ly-a.ly)[0];return pv?{ly:String(y),days:pv.days,auto:true}:null}
+/* bought day = 7.5h x (basic hourly + shift allowance) at the rate in force in November of the year before, paid over 5 payslips Apr-Aug */
+function buyCost(p){if(p.cost&&!isNaN(P(p.cost)))return P(p.cost);const d=(+p.ly-1)+'-11-15',r=rateAt(d),hp=P(baseFor(d.slice(0,7)).base)*12/1950+R5(r.prem)/1000;return Math.round(num(p.days)*(S.set.dayMins/60)*hp)}
+const KORD={base:0,hc:1,pto:2,adj:3,ot:4,prem:5};
+function slip(pm){const b=blockPm(pm),base=baseFor(pm),adj=S.adj[pm]||{},L=[],warn=[],otDays=[];
+ L.push({k:'base',l:'Monthly Pay',p:P(base.base)});
+ if(b){const g={},pg={};
+  for(let d=b.start;d<=b.end;d=add(d,1)){const o=otInfo(d);
+   if(o){otDays.push([d,o]);const k=o.cat+'|'+o.rate;(g[k]=g[k]||{cat:o.cat,rate:o.rate,m:0}).m+=o.m}
+   if(isWD(d)){const r=rateAt(d).prem;pg[r]=(pg[r]||0)+(+S.set.dayMins)}}
+  Object.values(g).sort((a,c)=>CORD.indexOf(a.cat)-CORD.indexOf(c.cat)).forEach(x=>L.push({k:'ot',l:CATS[x.cat],m:x.m,rate:x.rate,p:lineAmt(x.m,x.rate)}));
+  Object.entries(pg).forEach(([rate,m])=>L.push({k:'prem',l:'1/6 Shift',m,rate,p:lineAmt(m,rate)}));
+  if(adj.hc!=null&&adj.hc!=='')L.push({k:'hc',l:'Holiday Cal',p:P(adj.hc)});
+  else{const e=hcEst(b);if(e>0)L.push({k:'hc',l:'Holiday Cal',p:e,est:true})}
+  if(b.draft)warn.push('These block dates are a draft. Check them against the new TMS calendar in Settings.');
+ }else warn.push('No payroll block for this month. Add it in Settings → Payroll calendar.');
+ {const y=+pm.slice(0,4),seen=new Set();for(const p of [buyFor(y),buyFor(y-1),buyFor(y+1)]){if(!p||seen.has(p.ly))continue;seen.add(p.ly);const n=Math.max(1,parseInt(p.inst)||5),c=buyCost(p),first=p.first||p.ly+'-04';if(!(c>0))continue;
+  for(let k=0;k<n;k++)if(addM(first,k)===pm){const each=Math.floor(c/n);L.push({k:'pto',l:'PTO Purchase',p:-(k<n-1?each:c-each*(n-1))})}}}
+ for(const x of adj.lines||[]){const v=P(x.amt);if(!isNaN(v))L.push({k:'adj',l:x.label||'Adjustment',p:v,id:x.id})}
+ L.sort((a,c)=>KORD[a.k]-KORD[c.k]);
+ return{pm,b,L,gross:L.reduce((a,x)=>a+(isNaN(x.p)?0:x.p),0),otDays,warn,est:L.some(x=>x.est)}}
+const tyOf=pm=>{const[y,m]=pm.split('-').map(Number);return m>=4?y:y-1};
+const tmOf=pm=>((+pm.slice(5)-4+12)%12)+1;
+const pmAt=(ty,tm)=>addM(ty+'-04',tm-1);
+function cfg(ty){const K=Object.keys(S.tax).sort();let c=S.tax[K[0]];for(const k of K)if(+k<=ty)c=S.tax[k];return c}
+function allowance(){const m=/^(\d{1,5})L$/i.exec(String(S.set.taxCode).trim());return m?+m[1]*10+9:null}
+/* cumulative PAYE: tax due to date in pennies, taxable pay rounded down to whole pounds */
+function taxDue(ytdP,tm,ty){const c=cfg(ty),A=allowance()??12579;
+ const tx=Math.max(0,Math.floor((12*ytdP-A*100*tm)/1200));
+ const band=+c.band*tm/12,top=Math.max(band,(+c.addl-12570)*tm/12);
+ const b1=Math.min(tx,band),b2=Math.max(0,Math.min(tx,top)-band),b3=Math.max(0,tx-top);
+ return Math.round(b1*20+b2*40+b3*45)}
+function niFor(gP,ty){const c=cfg(ty),pt=P(c.pt),uel=P(c.uel);const a=Math.max(0,Math.min(gP,uel)-pt),b=Math.max(0,gP-uel);return divHU(a*fixed(c.ni1,2)+b*fixed(c.ni2,2),10000)}
+const memo=new Map();
+const hasAct=p=>{const a=S.actuals[p];return a&&!isNaN(P(a.ytdG))&&!isNaN(P(a.ytdT))};
+function ytdOf(p){if(hasAct(p))return{G:P(S.actuals[p].ytdG),T:P(S.actuals[p].ytdT),miss:[]};const c=calc(p);return{G:c.ytdG,T:c.ytdT,miss:c.miss}}
+function calc(pm){if(memo.has(pm))return memo.get(pm);
+ const s=slip(pm),ty=tyOf(pm),tm=tmOf(pm);
+ const prev=tm>1?ytdOf(pmAt(ty,tm-1)):{G:0,T:0,miss:[]};
+ const miss=[...prev.miss];if(tm>1){const pp=pmAt(ty,tm-1);if(!hasAct(pp)&&pp<todayISO().slice(0,7))miss.push(pp)}
+ const G=prev.G+s.gross,due=taxDue(G,tm,ty),tax=due-prev.T,ni=niFor(s.gross,ty);
+ const r={...s,ty,tm,tax,ni,net:s.gross-tax-ni,ytdG:G,ytdT:due,miss};memo.set(pm,r);return r}
+
+/* ================= leave ================= */
+const lyStart=y=>y+'-'+pad(S.set.lyM)+'-'+pad(S.set.lyD);
+const lyOf=d=>{const y=+d.slice(0,4);return d>=lyStart(y)?y:y-1};
+const lyLabel=y=>(+S.set.lyM===1&&+S.set.lyD===1)?String(y):y+'/'+String(y+1).slice(2);
+const num=v=>{const n=parseFloat(v);return isNaN(n)?0:n};
+function leaveOf(y){if(S.leave[y])return S.leave[y];const k=Object.keys(S.leave).filter(x=>+x<y&&S.leave[x].ent!=='').sort().pop();return{ent:k?S.leave[k].ent:'',carry:'0',open:'0'}}
+function bal(y){const L=leaveOf(y),s=lyStart(y),e=add(lyStart(y+1),-1),t=todayISO();
+ const bought=num(buyFor(y)?.days);
+ let taken=num(L.open),booked=0;const days=[];
+ for(const[d,x]of Object.entries(S.days)){if(d<s||d>e)continue;if(isLv(x.st)){const v=lvFrac(x);days.push([d,v,x.st]);if(d<=t)taken+=v;else booked+=v}}
+ const total=num(L.ent)+num(L.carry)+bought;
+ return{y,s,e,ent:num(L.ent),carry:num(L.carry),bought,total,taken,booked,left:total-taken-booked,days:days.sort((a,b)=>a[0]<b[0]?-1:1),entSet:L.ent!==''&&L.ent!=null}}
+function groups(days){const G=[];for(const x of days){const g=G[G.length-1];if(g&&D(x[0])-D(g.end)<=3*864e5){g.end=x[0];g.n+=x[1];g.ds.push(x[0])}else G.push({start:x[0],end:x[0],n:x[1],ds:[x[0]],half:x[2]==='half'})}return G}
+function setDay(d,patch){const x=Object.assign({},S.days[d]||{},patch);for(const k of Object.keys(x))if(x[k]==null||x[k]===''||x[k]===0)delete x[k];
+ if(x.st===defSt(d))delete x.st;if(x.shift===rotaShift(d))delete x.shift;
+ if(Object.keys(x).length)S.days[d]=x;else delete S.days[d]}
+
+/* ================= blocks: auto-extend and relink ================= */
+const weeksFor=pm=>[1,4,7,10].includes(+pm.slice(5))?5:4;
+function relink(){const B=sortedBlocks();for(let i=1;i<B.length;i++){const p=B[i-1],b=B[i];b.start=add(p.end,1);if(b.draft||b.end<b.start)b.end=add(b.start,weeksFor(b.pm)*7-1)}}
+function ensureBlocks(){let B=sortedBlocks(),last=B[B.length-1],n=0;const target=add(todayISO(),550);
+ while(last&&last.end<target&&n<60){const pm=addM(last.pm,1),s=add(last.end,1);last={pm,start:s,end:add(s,weeksFor(pm)*7-1),pay:'',appr:'',draft:true};S.blocks.push(last);n++}return n}
+
+/* ================= UI state ================= */
+let showDet=false,taxY=tyOf(todayISO().slice(0,7)),tab='home',calM=todayISO().slice(0,7),payPm=null,lyY=lyOf(todayISO()),blkY=+todayISO().slice(0,4),flashT=null,confirmReset=false;
+let SH=null; /* open sheet: {type,...} */
+const app=document.getElementById('app'),ov=document.getElementById('ov'),sheet=document.getElementById('sheet');
+function flash(t){let f=document.querySelector('.flash');if(!f){f=document.createElement('div');f.className='flash';f.setAttribute('role','status');document.body.appendChild(f)}f.textContent=t;clearTimeout(flashT);flashT=setTimeout(()=>f.remove(),2600)}
+const val=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
+function nextPm(){const t=todayISO();const c=sortedBlocks().filter(b=>payOf(b)>t);return c[0]?.pm||sortedBlocks().slice(-1)[0].pm}
+const src=pm=>S.actuals[pm]&&!isNaN(P(S.actuals[pm].net))?'act':'fc';
+function autoPay(pm){let d=add(addM(pm,1)+'-01',-1);while(dow(d)===0||dow(d)===6)d=add(d,-1);for(let k=0;k<3;k++){d=add(d,-1);while(dow(d)===0||dow(d)===6)d=add(d,-1)}return d}
+const payOf=b=>b.pay||autoPay(b.pm);
+const payLbl=b=>!b?'':'Paid '+fd(payOf(b),{weekday:'short'});
+const payList=()=>{const last=sortedBlocks().slice(-1)[0].pm,out=[];for(let p='2024-01';p<=last;p=addM(p,1))out.push(p);for(const k of Object.keys(S.actuals))if(!out.includes(k))out.push(k);return out.sort()};
+const wk=b=>{const d=(D(b.end)-D(b.start))/864e5+1;return d%7?`${Math.floor(d/7)} weeks ${d%7} days`:`${d/7} weeks`};
+const hourly=r=>P(r.base)*12/1950/100;
+const pmOpts=(sel,from,n)=>Array.from({length:n},(_,k)=>addM(from,k)).map(p=>`<option value="${p}"${p===sel?' selected':''}>${pmName(p)}</option>`).join('');
+const f=(label,html)=>`<label class="f"><span>${label}</span>${html}</label>`;
+
+/* ================= screens ================= */
+function vCal(){const t=todayISO(),first=calM+'-01',start=iso(monT(first)),last=add(addM(calM,1)+'-01',-1);let cells='';
+ for(let d=start;d<=last||dow(d)!==1;d=add(d,1)){const st=statusOf(d),o=otInfo(d),b=blockOf(d),sh=shiftOf(d);
+  const cls=st==='work'?sh:st==='leave'?'AL':(st==='half'||st==='hrs')?'H'+sh:st==='sick'?'SK':st==='bank'?'BH':'';
+  cells+=`<button class="day ${cls}${b&&b.start===d?' bs':''}${d.slice(0,7)!==calM?' out':''}${d===t?' today':''}" data-a="day" data-v="${d}" aria-label="${fd(d,{weekday:'long',month:'long'})}: ${st==='work'?(sh==='E'?'early':'late')+' shift':STS[st]}${o?', '+hrs(o.m)+' overtime':''}">${+d.slice(8)}${st==='sick'?'<small>Sick</small>':st==='bank'?'<small>BH</small>':''}${o?`<span class="ot">+${hrs(o.m)}</span>`:''}</button>`}
+  return`<div class="top c"><button class="circ" data-a="calGo" data-v="-1" aria-label="Previous month">‹</button><div class="t"><h1>${pmName(calM)}</h1>${calM!==t.slice(0,7)?'<button class="btn link" data-a="calToday">Back to today</button>':''}</div><button class="circ" data-a="calGo" data-v="1" aria-label="Next month">›</button></div>
+ <div class="cal">${['M','T','W','T','F','S','S'].map(x=>`<div class="dh">${x}</div>`).join('')}${cells}</div>
+ <div class="legend"><span><i class="sw" style="background:var(--early)"></i>Early</span><span><i class="sw" style="background:var(--late)"></i>Late</span><span><i class="sw" style="background:var(--leave)"></i>Holiday</span><span><i class="sw" style="background:var(--acc);width:4px"></i>New pay block</span></div>
+ <div class="lbl">Overtime worked in ${pmName(calM,true).split(' ')[0]}</div><div class="card">${sumHTML(otSum(first,last))}</div>
+ <p class="sub">Tap a day to add overtime or holiday.</p>`}
+
+function vPay(){const L=payList(),np=nextPm(),pm=payPm&&L.includes(payPm)?payPm:np,i=L.indexOf(pm),c=calc(pm),b=c.b,a=S.actuals[pm],act=src(pm)==='act',hist=act&&c.otDays.length===0,isNext=pm===np,t=todayISO();
+ if(!b&&!act)return`<div class="top c"><button class="circ" data-a="payGo" data-v="${L[i-1]||''}" aria-label="Previous month"${i>0?'':' disabled'}>‹</button><div class="t"><div class="sub">Payslip</div><h1>${pmName(pm)}</h1></div><button class="circ" data-a="payGo" data-v="${L[i+1]||''}" aria-label="Next month">›</button></div>
+ <div class="card" style="text-align:center"><h2>No payslip saved</h2><p class="sub">Add the numbers from your ${pmName(pm)} payslip.</p><button class="btn pri blk" data-a="shPayslip">Add payslip</button></div><button class="btn link blk" data-a="payGo" data-v="${np}">Back to next pay</button>`;
+ let tiles='';{const B=bal(lyOf(t));let otm=0,otp=0;if(b)for(let d=b.start;d<=b.end;d=add(d,1)){const o=otInfo(d);if(o){otm+=o.m;otp+=o.pay}}
+  const mn=pmName(pm).split(' ')[0];
+  tiles=`${isNext?'<button class="btn pri blk xl" data-a="addOT">+ Add overtime</button>':''}<div class="tiles"><button class="card tile" data-a="otSum" data-v="${pm}"><div class="lab">Overtime ${mn}</div><div class="v">${hrs(otm)}</div><div class="lab">${money(Math.round(otp))}</div></button><button class="card tile" data-a="tab" data-v="leave"><div class="lab">Holidays left</div><div class="v">${B.entSet?`${dd(B.left)} days <span style="font-size:16px;font-weight:600;color:var(--mute);letter-spacing:0">(${dd(B.left*S.set.dayMins/60)}h)</span>`:'—'}</div><div class="lab">${B.entSet?`${dd(B.booked)} booked`:'Tap to set up'}</div></button></div>`}
+ const NET=act?P(a.net):c.net;
+ const lines=c.L.map(x=>`<div class="ln"><span>${esc(x.l==='Monthly Pay'?'Salary':x.l==='1/6 Shift'?'Shift allowance':x.k==='ot'?otName(x):x.l)}${x.est?' <span class="tag">estimate</span>':''}${x.m!=null?`<span class="s">${hrs(x.m)} × £${esc(x.rate)}</span>`:''}</span><span class="r${x.p<0?' neg':''}">${money(x.p)}</span></div>`).join('');
+ return`<div class="top c"><button class="circ" data-a="payGo" data-v="${L[i-1]||''}" aria-label="Previous month"${i>0?'':' disabled'}>‹</button><div class="t"><div class="sub">${isNext?'Next pay':pm<np?'Paid':'Coming up'}</div><h1>${pmName(pm)}</h1><div class="sub">${esc(payLbl(b))}</div></div><button class="circ" data-a="payGo" data-v="${L[i+1]||''}" aria-label="Next month"${i<L.length-1?'':' disabled'}>›</button></div>
+ <div class="card hero"><div class="lab">Take-home pay · ${act?'from your payslip':'estimate'}</div><div class="big">${money(NET)}</div>${b?`<div class="lab">For work ${fd(b.start)} – ${fd(b.end)}${b.draft?' (estimated dates)':''}</div>`:''}</div>
+ ${tiles}${!isNext?`<button class="btn link" data-a="payGo" data-v="${np}">Back to next pay</button>`:''}
+ ${c.miss.length?`<p class="hint">Add your ${c.miss.map(p=>pmName(p,true).split(' ')[0]).join(', ')} payslip so the tax here is exact.</p>`:''}
+ ${!showDet?'<button class="btn blk" data-a="det">Show payslip details</button>':`<button class="btn link blk" data-a="det">Hide payslip details</button>${hist?`<div class="card">${b?(()=>{const bs=(c.L.find(x=>x.k==='base')||{p:0}).p,pr=c.L.filter(x=>x.k==='prem'),prs=pr.reduce((q,x)=>q+x.p,0),oth=P(a.gross)-bs-prs;
+  return`<div class="sec" style="margin-top:0">PAY</div><div class="ln"><span>Salary</span><span class="r">${money(bs)}</span></div>${pr.map(x=>`<div class="ln"><span>Shift allowance<span class="s">${hrs(x.m)} × £${esc(x.rate)}</span></span><span class="r">${money(x.p)}</span></div>`).join('')}
+  <div class="ln"><span>Overtime and other pay<span class="s">Overtime, Holiday Cal, bonuses, minus bought holidays</span></span><span class="r${oth<0?' neg':''}">${money(oth)}</span></div><div class="ln tot"><span>Gross</span><span class="r">${money(P(a.gross))}</span></div><div class="sec">DEDUCTIONS</div>`})():''}<div class="ln"${b?' hidden':''}><span>Gross</span><span class="r">${money(P(a.gross))}</span></div><div class="ln"><span>Tax</span><span class="r neg">−${money(P(a.tax))}</span></div><div class="ln"><span>National Insurance</span><span class="r neg">−${money(P(a.ni))}</span></div><div class="ln tot"><span>Take-home</span><span class="r">${money(P(a.net))}</span></div></div>`
+ :`<div class="card"><div class="sec" style="margin-top:0">PAY</div>${lines}<div class="ln tot"><span>Gross</span><span class="r">${money(c.gross)}</span></div>
+  <div class="sec">DEDUCTIONS</div><div class="ln"><span>Tax</span><span class="r neg">−${money(c.tax)}</span></div><div class="ln"><span>National Insurance</span><span class="r neg">−${money(c.ni)}</span></div>
+  <div class="ln tot"><span>Take-home</span><span class="r">${money(c.net)}</span></div>
+  ${act?`<p class="sub" style="margin:8px 0 0">${Math.abs(P(a.net)-c.net)<=1?'✓ Matches your payslip.':`Your payslip says ${money(P(a.net))}, ${money(Math.abs(P(a.net)-c.net))} ${P(a.net)>c.net?'more':'less'} than this estimate.`}</p>`:''}</div>`}`}
+ ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}`}
+const CATL={b15:'×1.5',b2:'×2',s15:'×1.5 + shift',s2:'×2 + shift'};
+function otSum(from,to){const g={},days=[];for(let d=from;d<=to;d=add(d,1)){const o=otInfo(d);if(o){days.push([d,o]);const x=g[o.cat]=g[o.cat]||{m:0,p:0};x.m+=o.m;x.p+=o.pay}}
+ const rows=CORD.filter(k=>g[k]).map(k=>({k,m:g[k].m,p:Math.round(g[k].p)}));return{rows,days,m:rows.reduce((a,x)=>a+x.m,0),p:rows.reduce((a,x)=>a+x.p,0)}}
+const sumHTML=o=>o.rows.length?o.rows.map(x=>`<div class="ln"><span><b>${hrs(x.m)}</b> <span class="sub">${CATL[x.k]}</span></span><span class="r">${money(x.p)}</span></div>`).join('')+`<div class="ln tot"><span>${hrs(o.m)} in total</span><span class="r">${money(o.p)}</span></div>`:'<p class="sub" style="margin:0">No overtime logged.</p>';
+function ytdAll(pm){const a=S.actuals[pm]||{},tm=tmOf(pm),ty=tyOf(pm),c=calc(pm),act=src(pm)==='act';
+ const p=tm>1?ytdAll(pmAt(ty,tm-1)):{G:0,T:0,N:0,NET:0,est:false};
+ const g=act?P(a.gross):c.gross,t=act?P(a.tax):c.tax,n=act?P(a.ni):c.ni,net=act?P(a.net):c.net;
+ const y=(k,sum)=>!isNaN(P(a[k]))?P(a[k]):sum;
+ return{G:y('ytdG',p.G+(isNaN(g)?0:g)),T:y('ytdT',hasAct(pm)?P(a.ytdT):(act?p.T+t:c.ytdT)),N:y('ytdN',p.N+(isNaN(n)?0:n)),NET:y('ytdNet',p.NET+(isNaN(net)?0:net)),est:p.est||!act}}
+function yearCard(ty){const t=todayISO();let last=null;
+ for(let k=1;k<=12;k++){const p=pmAt(ty,k),b=blockPm(p);if((b&&payOf(b)<=t)||S.actuals[p]&&payOf(b||{pm:p})<=t)last=p}
+ const end=pmAt(ty,12),Y=ytdAll(end);
+ const rows=(o)=>`<div class="ln"><span>Gross pay</span><span class="r">${money(o.G)}</span></div><div class="ln"><span>Tax</span><span class="r neg">−${money(o.T)}</span></div><div class="ln"><span>National Insurance</span><span class="r neg">−${money(o.N)}</span></div><div class="ln tot"><span>Take-home</span><span class="r">${money(o.NET)}</span></div>`;
+ const so=last?ytdAll(last):null;
+ return`${so?`<div class="card"><div class="sub" style="margin-bottom:6px">So far · April to ${pmName(last,true).split(' ')[0]}${so.est?' (some months estimated)':' (from your payslips)'}</div>${rows(so)}</div>`:''}
+ <div class="card"><div class="sub" style="margin-bottom:6px">Whole year estimate · April to March</div><div class="sub" style="margin:-4px 0 6px">Future months only include overtime you have logged.</div>${rows(Y)}</div>`}
+function annualTax(Gp,ty){const c=cfg(ty),A=(allowance()??12579)-9,tx=Math.max(0,Math.floor((Gp-A*100)/100)),band=+c.band,top=Math.max(band,+c.addl-12570);
+ const b1=Math.min(tx,band),b2=Math.max(0,Math.min(tx,top)-band),b3=Math.max(0,tx-top);return{tx,A,due:Math.round(b1*20+b2*40+b3*45)}}
+function vTax(){const ty=taxY,cur0=tyOf(nextPm()),hasAny=Array.from({length:12},(_,k)=>pmAt(ty,k+1)).some(p=>S.actuals[p]||blockPm(p));
+ if(!hasAny)return`<div class="top c"><button class="circ" data-a="taxGo" data-v="-1" aria-label="Previous tax year"${ty>2023?'':' disabled'}>‹</button><div class="t"><div class="sub">Tax year</div><h1>${ty}/${String(ty+1).slice(2)}</h1><div class="sub">6 Apr ${ty} – 5 Apr ${ty+1}</div></div><button class="circ" data-a="taxGo" data-v="1" aria-label="Next tax year">›</button></div>
+ <div class="card" style="text-align:center"><h2>No payslips for this year yet</h2><p class="sub">Add them on the Pay tab (use ‹ to go back to the month) and this page fills in.</p></div>`;
+ const Y=ytdAll(pmAt(ty,12)),{tx,A,due}=annualTax(Y.G,ty),diff=Y.T-due,ok=Math.abs(diff)<500;
+ const cur=tyOf(nextPm());
+ return`<div class="top c"><button class="circ" data-a="taxGo" data-v="-1" aria-label="Previous tax year"${ty>2023?'':' disabled'}>‹</button><div class="t"><div class="sub">Tax year</div><h1>${ty}/${String(ty+1).slice(2)}</h1><div class="sub">6 Apr ${ty} – 5 Apr ${ty+1}</div></div><button class="circ" data-a="taxGo" data-v="1" aria-label="Next tax year"${ty<cur+1?'':' disabled'}>›</button></div>
+ <div class="card hero"><div class="lab">At the end of the tax year</div><div class="big">${ok?'≈ £0':money(Math.abs(diff))}</div>
+  <div>${ok?'Your tax should be about right. Nothing to pay back, nothing to claim.':diff>0?'HMRC should owe you this.':'You may owe HMRC this.'}</div>
+  <div class="trio"><div><small>You should pay</small><b>${money(due)}</b></div><div><small>You'll have paid</small><b>${money(Y.T)}</b></div><div><small>${ok?'Difference':diff>0?'Paid too much':'Paid too little'}</small><b>${money(Math.abs(diff))}</b></div></div>
+  <div class="lab" style="margin-top:10px">Tax for the whole year (April to March), worked out automatically from your payslips${Y.est?' and the months still to come':''}.</div></div>
+ ${yearTable(ty)}
+ <div class="lbl">Good to know</div>
+ <div class="card"><div class="ln"><span>National Insurance is settled every month. There's nothing to get back.</span></div>
+  <div class="ln"><span>Only your Almac pay is counted, not savings interest or investments.</span></div>
+  <div class="ln"><span>After 5 April HMRC checks your year. If it's wrong, they send a letter (P800), usually June–November.</span></div></div>`}
+let chSel={net:null,ot:null};
+function charts(ty){const ms=Array.from({length:12},(_,k)=>pmAt(ty,k+1)),t=todayISO();
+ const rows=ms.map(p=>{const b=blockPm(p),act=src(p)==='act',c=calc(p),base=(c.L.find(x=>x.k==='base')||{p:0}).p,prem=c.L.filter(x=>x.k==='prem').reduce((a,x)=>a+x.p,0);
+  const g=act?P(S.actuals[p].gross):c.gross;return{p,act,known:act||!!b,net:act?P(S.actuals[p].net):c.net,ot:Math.max(0,g-base-prem)}});
+ const one=(key,title,note)=>{const mx=Math.max(1,...rows.map(r=>r[key])),sel=chSel[key]??rows.findIndex(r=>r.p===nextPm()),cur=rows[sel]||rows[0];
+  return`<div class="card"><div class="cap"><h2>${title}</h2><span class="sub">${pmName(cur.p,true)}</span></div><div class="cap"><span class="sub">${cur.act?'Payslip':'Estimate'}</span><b>${money(cur[key])}</b></div>
+  <div class="bars" role="img" aria-label="${title} by month">${rows.map((r,i)=>`<button data-a="bar" data-v="${key}|${i}" class="${i===sel?'sel':''}" aria-label="${pmName(r.p)}: ${money(r[key])}${r.act?'':' estimate'}"><i class="${r.act?'':'e'}" style="height:${r.known?Math.max(1.5,r[key]/mx*100):0}%"></i></button>`).join('')}</div>
+  <div class="bl">${ms.map(p=>`<span>${pmName(p,true)[0]}</span>`).join('')}</div>
+  <div class="key"><span><i style="background:var(--acc)"></i>Payslip</span><span><i style="background:var(--accSoft);box-shadow:inset 0 0 0 1.5px var(--acc)"></i>Estimate</span></div>
+  ${note?`<p class="sub" style="margin:8px 0 0">${note}</p>`:''}</div>`};
+ return`<div class="lbl">Month by month</div>${one('net','Take-home','')}${one('ot','Overtime & extras','Pay on top of your salary and shift allowance: mostly overtime, plus Holiday Cal and bonuses, minus bought holidays.')}`}
+function yearTable(ty){const t=todayISO();let last=null;
+ for(let k=1;k<=12;k++){const p=pmAt(ty,k),b=blockPm(p);if(b&&payOf(b)<=t)last=p}
+ const Y=ytdAll(pmAt(ty,12)),so=last?ytdAll(last):null;
+ const row=(l,k,neg)=>`<tr><td>${l}</td>${so?`<td class="n${neg?' neg':''}">${money(so[k])}</td>`:''}<td class="n${neg?' neg':''}">${money(Y[k])}</td></tr>`;
+ return`<div class="lbl">Your year in numbers</div><div class="card"><table class="yt"><tr><th></th>${so?`<th class="n">So far<span class="s">Apr–${pmName(last,true).split(' ')[0]}</span></th>`:''}<th class="n">Whole year<span class="s">estimate</span></th></tr>
+ ${row('Gross','G')}${row('Tax','T',1)}${row('NI','N',1)}<tr class="tk">${row('Take-home','NET').slice(4)}</table>
+ <p class="sub" style="margin:8px 0 0">The whole-year estimate only includes overtime you've logged.</p></div>`}
+const otName=x=>({b15:'Overtime ×1.5',b2:'Overtime ×2',s15:'Overtime ×1.5 + shift',s2:'Overtime ×2 + shift'})[x.l===CATS.b15?'b15':x.l===CATS.b2?'b2':x.l===CATS.s15?'s15':'s2'];
+
+function vLeave(){const B=bal(lyY),t=todayISO(),G=groups(B.days),fut=G.filter(g=>g.end>t),past=G.filter(g=>g.end<=t);
+ const gl=(g,c)=>`<div class="ln"><span>${g.start===g.end?fd(g.start,{weekday:'short'}):fd(g.start)+' – '+fd(g.end)}<span class="s">${dd(g.n)} day${g.n===1?'':'s'} (${dd(g.n*S.set.dayMins/60)}h)</span></span>${c?`<button class="btn red" data-a="delLeave" data-v="${g.ds.join(',')}">Cancel</button>`:''}</div>`;
+ return`<div class="top c"><button class="circ" data-a="lyGo" data-v="-1" aria-label="Previous year">‹</button><div class="t"><h1>Holidays ${lyLabel(lyY)}</h1></div><button class="circ" data-a="lyGo" data-v="1" aria-label="Next year">›</button></div>
+ ${B.entSet?`<div class="card hero"><div class="lab">Days left</div><div class="big">${dd(B.left)}</div><div class="lab">of ${dd(B.total)} days · ${dd(B.left*S.set.dayMins/60)} hours</div>
+  <div class="bar"><i style="width:${Math.min(100,B.taken/B.total*100)}%;background:#fff"></i><i style="width:${Math.min(100,B.booked/B.total*100)}%;background:rgba(255,255,255,.55)"></i></div>
+  <div class="lab">${dd(B.taken)} taken · ${dd(B.booked)} booked</div></div>`
+ :`<div class="card"><h2>How many days do you get?</h2><p class="sub">Add your yearly allowance to see days left.</p><button class="btn pri blk" data-a="shAllow">Set allowance</button></div>`}
+ <button class="btn pri blk xl" data-a="shBook">+ Book holiday</button>
+ ${fut.length?`<div class="lbl">Booked</div><div class="card">${fut.map(g=>gl(g,1)).join('')}</div>`:''}
+ ${past.length?`<div class="lbl">Taken</div><div class="card">${past.map(g=>gl(g,1)).join('')}</div>`:''}
+ ${B.entSet?'<button class="btn link" data-a="shAllow">Edit allowance and bought days</button>':''}`}
+
+function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,b)=>a.payFrom<b.payFrom?1:-1);
+ const ok=FIX.length>0&&FIX.every(f=>{let g=0;for(const x of f.L)g+=Array.isArray(x)?lineAmt(x[0],x[1]):P(x);const t=taxDue(P(f.pg)+g,f.m,2026)-P(f.pt),n=niFor(g,2026);return g===P(f.g)&&t===P(f.t)&&n===P(f.n)});
+ const yb=sortedBlocks().filter(b=>+b.pm.slice(0,4)===blkY),ys=[...new Set(S.blocks.map(b=>+b.pm.slice(0,4)))].sort();
+ return`<div class="top"><div class="t"><h1>Setup</h1></div></div>
+ <div class="lbl">Salary</div>
+ <div class="card"><div class="big" style="font-size:40px;margin-top:0">${money(P(cur.base))}<span class="sub" style="font-size:16px;letter-spacing:0;font-weight:600"> /month</span></div>
+  <div class="sub">£${hourly(cur).toFixed(2)} an hour${ok?' · ✓ matches your last 6 payslips':''}</div>
+  ${R.length>1?`<div style="margin-top:12px">${R.map((r,k)=>`<div class="ln"><span>${money(P(r.base))}<span class="s">${r.payFrom<'2001'?'Earlier salary':'From the '+pmName(r.payFrom)+' payslip'}</span></span>${r.payFrom>todayISO().slice(0,7)?`<button class="btn red" data-a="delRate" data-v="${S.rates.indexOf(r)}">Remove</button>`:''}</div>`).join('')}</div>`:''}
+  <button class="btn pri blk" style="margin-top:12px" data-a="shRise">Add pay rise</button></div>
+ <div class="lbl">Pay blocks</div>
+ <div class="card"><div class="top c" style="margin:0 0 6px"><button class="circ" data-a="blkGo" data-v="-1" aria-label="Previous year"${blkY>ys[0]?'':' disabled'}>‹</button><div class="t"><h2>${blkY}</h2></div><button class="circ" data-a="blkGo" data-v="1" aria-label="Next year"${blkY<ys[ys.length-1]?'':' disabled'}>›</button></div>
+  ${yb.map(b=>`<button class="ln btnln" data-a="shBlock" data-v="${b.pm}"><span>${pmName(b.pm).split(' ')[0]} ${b.draft?'<span class="tag">estimated</span>':''}<span class="s">${fd(b.start)} – ${fd(b.end)} · ${wk(b)}</span></span><span class="r">${b.pay?'':'<span class="sub">'}Paid ${fd(payOf(b))}${b.pay?'':'</span>'} <span class="chev">›</span></span></button>`).join('')}
+  <p class="sub" style="margin:10px 0 0">Tap a month to set its dates. Estimated months follow the usual 5-4-4 weeks until you change them.</p></div>
+ <div class="lbl">Shifts</div>
+ <div class="card"><div class="sub" style="margin-bottom:8px">This week you're on</div><div class="seg" style="margin:0"><button data-a="setShift" data-v="E" class="${shiftOf(iso(monT(todayISO())))==='E'?'on':''}">Early<small>06–14</small></button><button data-a="setShift" data-v="L" class="${shiftOf(iso(monT(todayISO())))==='L'?'on':''}">Late<small>14–22</small></button></div></div>
+ <div class="lbl">Tax code</div>
+ <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
+ <div class="lbl">Backup</div>
+ <div class="card"><div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div></div>
+ <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
+
+/* ================= sheets ================= */
+function openSheet(o){SH=o;renderSheet();ov.classList.add('on')}
+function closeSheet(){SH=null;ov.classList.remove('on')}
+const head=(title,sub,nav)=>`<div class="grab"></div><div class="sh">${nav?`<button class="circ" data-a="${nav}" data-v="-1" aria-label="Previous">‹</button>`:''}<div class="t"><h2>${title}</h2>${sub?`<div class="sub">${sub}</div>`:''}</div>${nav?`<button class="circ" data-a="${nav}" data-v="1" aria-label="Next">›</button>`:''}<button class="circ" data-a="close" aria-label="Close">×</button></div>`;
+function dayRec(){return{st:SH.st,lvm:SH.st==='hrs'?Math.round((parseFloat(SH.lvh)||0)*60):0,ot:Math.round((parseFloat(SH.ot)||0)*60),mul:SH.mul?+SH.mul:undefined,cat:SH.cat||undefined}}
+function pvHTML(){const o=classify(SH.d,dayRec());if(!o)return'<span class="sub">No overtime</span>';
+ return`<b>${money(lineAmt(o.m,o.rate))}</b> <span class="sub">· ${o.mul===2?'×2':'×1.5'}${o.elig?' + shift':''}</span>`}
+const SHEETS={
+ day:()=>{const d=SH.d,b=blockOf(d),w=SH.st==='work'||SH.st==='half'||SH.st==='hrs',lv=isLv(SH.st);
+  return head(fd(d,{weekday:'long',month:'short'}),b?`Paid in ${pmName(b.pm,true).split(' ')[0]}`:'','dayGo')+
+  `<div class="step"><button data-a="otStep" data-v="-0.25" aria-label="Less overtime">−</button><div class="val" id="otv">${dd(parseFloat(SH.ot)||0)}h</div><button data-a="otStep" data-v="0.25" aria-label="More overtime">+</button></div>
+  <div class="chips" style="justify-content:center">${['1','2','3.75','4','7.5'].map(v=>`<button data-a="otSet" data-v="${v}" class="${String(parseFloat(SH.ot)||0)===v?'on':''}">${v}h</button>`).join('')}</div>
+  <div class="pv" id="pv" style="text-align:center">${pvHTML()}</div>
+  ${SH.more?`<div class="lbl">This day</div><div class="chips">${[['work','Working'],['off','Day off'],['leave','Holiday'],['sick','Sick'],['bank','Bank hol']].map(([k,l])=>`<button data-a="dSt" data-v="${k}" class="${(k==='leave'?lv:SH.st===k)?'on':''}">${l}</button>`).join('')}</div>
+  ${lv?`<div class="seg">${[['leave','Full day'],['half','Half day'],['hrs','Hours']].map(([k,l])=>`<button data-a="dSt" data-v="${k}" class="${SH.st===k?'on':''}">${l}</button>`).join('')}</div>
+   ${SH.st==='hrs'?`<div class="step"><button data-a="lvStep" data-v="-0.25" aria-label="Fewer holiday hours">−</button><div class="val" style="font-size:32px">${dd(SH.lvh)}h <span class="sub" style="font-size:14px;letter-spacing:0">holiday</span></div><button data-a="lvStep" data-v="0.25" aria-label="More holiday hours">+</button></div>`:''}`:''}
+  ${w?`<div class="seg"><button data-a="dSh" data-v="E" class="${SH.shift==='E'?'on':''}">Early<small>06–14</small></button><button data-a="dSh" data-v="L" class="${SH.shift==='L'?'on':''}">Late<small>14–22</small></button></div>`:''}
+  ${SH.adv?`<div class="two">${f('Rate',`<select id="dMul"><option value="">Auto</option><option value="1.5"${SH.mul==='1.5'?' selected':''}>×1.5</option><option value="2"${SH.mul==='2'?' selected':''}>×2</option></select>`)}${f('Shift pay',`<select id="dCat"><option value="">Auto</option>${CORD.map(k=>`<option value="${k}"${SH.cat===k?' selected':''}>${({b15:'No, ×1.5',b2:'No, ×2',s15:'Yes, ×1.5',s2:'Yes, ×2'})[k]}</option>`).join('')}</select>`)}</div>`:`<button class="btn link" data-a="dAdv">Change the overtime rate</button>`}`
+  :`<button class="btn link blk" data-a="dMore">Holiday, sick or shift swap</button>`}
+  <button class="btn pri blk" style="margin-top:8px" data-a="dSave">Save</button>${S.days[d]?'<button class="btn red blk" data-a="dClear">Delete overtime and holiday for this day</button>':''}`},
+ pick:()=>{const d=SH.d,x=S.days[d],o=otInfo(d),st=statusOf(d),b=blockOf(d);
+  const now=[o?`${hrs(o.m)} overtime`:'',isLv(st)?`Holiday ${dd(lvFrac(x)*S.set.dayMins/60)}h`:'',st==='sick'?'Sick':st==='bank'?'Bank holiday':''].filter(Boolean).join(' · ');
+  return head(fd(d,{weekday:'long',month:'long'}),now||(st==='work'?(shiftOf(d)==='E'?'Early shift':'Late shift'):'Day off'))+
+  `<button class="btn pri blk xl" data-a="pickOT">${o?'Change overtime':'+ Add overtime'}</button>
+  <button class="btn blk xl" data-a="pickHol">${isLv(st)?'Change holiday':'+ Add holiday'}</button>
+  <button class="btn link blk" data-a="pickMore">Sick, bank holiday or shift swap</button>
+  ${x?'<button class="btn red blk" data-a="dClear">Clear this day</button>':''}`},
+ hol:()=>{const d=SH.d,had=isLv(statusOf(d));
+  return head('Holiday',fd(d,{weekday:'long',month:'long'}))+
+  `<div class="seg">${[['leave','Full day'],['half','Half day'],['hrs','Hours']].map(([k,l])=>`<button data-a="hK" data-v="${k}" class="${SH.k===k?'on':''}">${l}</button>`).join('')}</div>
+  ${SH.k==='hrs'?`<div class="step"><button data-a="lvStep" data-v="-0.25" aria-label="Fewer hours">−</button><div class="val">${dd(SH.lvh)}h</div><button data-a="lvStep" data-v="0.25" aria-label="More hours">+</button></div>`:''}
+  <p class="sub" style="text-align:center">${dd(SH.k==='leave'?S.set.dayMins/60:SH.k==='half'?S.set.dayMins/120:parseFloat(SH.lvh)||0)}h comes off your holidays</p>
+  <button class="btn pri blk" data-a="hSave">Save holiday</button>${had?'<button class="btn red blk" data-a="hDel">Remove holiday</button>':''}`},
+ otsum:()=>{const b=blockPm(SH.pm),o=b?otSum(b.start,b.end):{rows:[],days:[]};
+  return head('Overtime '+pmName(SH.pm).split(' ')[0],b?`Work ${fd(b.start)} – ${fd(b.end)} · ${payLbl(b)}`:'')+`<div class="card" style="box-shadow:none;background:var(--bg)">${sumHTML(o)}</div>
+  ${o.days.length?`<div class="lbl">Days</div>${o.days.map(([d,x])=>`<div class="ln"><span>${fd(d,{weekday:'short'})}</span><span class="sub">${hrs(x.m)} · ${CATL[x.cat]}</span></div>`).join('')}`:''}
+  <button class="btn blk" style="margin-top:12px" data-a="otRota">Open rota</button>`},
+ payslip:()=>{const pm=SH.pm,a=S.actuals[pm]||{},v=k=>esc(a[k]??'');
+  return head(pmName(pm)+' payslip','Copy the numbers from your payslip')+
+  `<div class="two">${f('Gross',`<input id="aG" inputmode="decimal" value="${v('gross')}">`)}${f('Take-home (net)',`<input id="aN" inputmode="decimal" value="${v('net')}">`)}${f('Tax (PAYE)',`<input id="aT" inputmode="decimal" value="${v('tax')}">`)}${f('National Insurance',`<input id="aI" inputmode="decimal" value="${v('ni')}">`)}${f('Gross YTD',`<input id="aYG" inputmode="decimal" value="${v('ytdG')}">`)}${f('PAYE YTD',`<input id="aYT" inputmode="decimal" value="${v('ytdT')}">`)}${f('NI YTD',`<input id="aYN" inputmode="decimal" value="${v('ytdN')}">`)}${f('Net pay YTD',`<input id="aYP" inputmode="decimal" value="${v('ytdNet')}">`)}</div>
+  <p class="sub">YTD is the grey column on the right of the payslip. It keeps next month's tax exact.</p>
+  <button class="btn pri blk" data-a="saveAct">Save</button>${S.actuals[pm]?'<button class="btn red blk" data-a="clearAct">Delete this payslip</button>':''}`},
+ extra:()=>{const pm=SH.pm,adj=S.adj[pm]||{};
+  return head('Extra pay',pmName(pm))+
+  f('Holiday Cal (leave empty and the app works it out)',`<input id="xH" inputmode="decimal" value="${esc(adj.hc??'')}" placeholder="Estimated">`)+
+  `${(adj.lines||[]).map(x=>`<div class="ln"><span>${esc(x.label)}</span><span class="r">${money(P(x.amt))} <button class="btn red" data-a="delLine" data-v="${esc(x.id)}">Remove</button></span></div>`).join('')}
+  <div class="two">${f('Other (e.g. bonus)','<input id="xL" placeholder="Bonus">')}${f('Amount',`<input id="xA" inputmode="decimal" placeholder="150.00">`)}</div>
+  <p class="sub">Use a minus for a deduction, e.g. −50.</p><button class="btn pri blk" data-a="saveExtra">Save</button>`},
+ book:()=>head('Book holiday','Weekends and bank holidays are skipped')+
+  `<div class="two">${f('First day',`<input type="date" id="lvF" value="${esc(SH.f||'')}">`)}${f('Last day',`<input type="date" id="lvT" value="${esc(SH.t||'')}">`)}</div>
+  <div class="seg">${[['leave','Full days'],['half','Half days'],['hrs','Hours']].map(([k,l])=>`<button data-a="lvK" data-v="${k}" class="${(SH.k||'leave')===k?'on':''}">${l}</button>`).join('')}</div>
+  ${SH.k==='hrs'?f('Hours each day',`<input id="lvH" inputmode="decimal" value="${esc(SH.h||'')}" placeholder="e.g. 2.5">`):''}
+  <button class="btn pri blk" data-a="book">Book</button>`,
+ allow:()=>{const L=leaveOf(lyY),bp=buyFor(lyY);
+  return head('Allowance '+lyLabel(lyY))+
+  `${f('Days in your contract',`<input id="alE" inputmode="decimal" value="${esc(L.ent??'')}" placeholder="e.g. 25">`)}
+  <div class="two">${f('Carried over',`<input id="alC" inputmode="decimal" value="${esc(L.carry??'0')}">`)}${f('Already taken before this app',`<input id="alO" inputmode="decimal" value="${esc(L.open??'0')}">`)}</div>
+  ${f('Holiday days you bought for '+lyLabel(lyY),`<input id="puD" inputmode="decimal" value="${esc(bp?bp.days:'0')}">`)}
+  <p class="sub" style="margin-top:-6px">${bp&&num(bp.days)>0?`Costs ${money(buyCost(bp))} (${money(Math.round(buyCost(bp)/(parseInt(bp.inst)||5)))} a month), taken off your ${pmName((bp.first||bp.ly+'-04'),true).split(' ')[0]}–${pmName(addM(bp.first||bp.ly+'-04',(parseInt(bp.inst)||5)-1),true).split(' ')[0]} payslips. `:''}The app uses the same number every year until you change it.</p>
+  <button class="btn pri blk" style="margin-top:8px" data-a="saveAllow">Save</button>`},
+ rise:()=>{const m=SH.m||addM(todayISO().slice(0,7),1),b=P(SH.b||''),h=b>0?b*12/1950/100:0,s=h/6;
+  return head('Pay rise','Everything else is worked out for you')+
+  f('New monthly salary £',`<input id="prB" inputmode="decimal" placeholder="e.g. 2692.89" value="${esc(SH.b||'')}">`)+
+  f('First payslip with the new salary',`<select id="prM">${pmOpts(m,todayISO().slice(0,7),24)}</select>`)+
+  `<div class="pv" id="rpv">${h?riseHTML(h,s,m):'<span class="sub">Type the salary to see the new rates.</span>'}</div><button class="btn pri blk" data-a="saveRise">Save pay rise</button>`},
+ block:()=>{const b=blockPm(SH.pm),m=SH.view;const s=b.start,e=SH.end,first=m+'-01',st=iso(monT(first)),ls=add(addM(m,1)+'-01',-1);let g='';
+  for(let d=st;d<=ls||dow(d)!==1;d=add(d,1)){const inR=d>=s&&d<=e;g+=`<button class="md${inR?' in':''}${d===s||d===e?' edge':''}${d===(SH.pay||autoPay(SH.pm))?' payd':''}${d.slice(0,7)!==m?' out':''}" data-a="mPick" data-v="${d}">${+d.slice(8)}</button>`}
+  const days=(D(e)-D(s))/864e5+1;
+  return head(pmName(SH.pm).split(' ')[0]+' pay',`Starts ${fd(s,{weekday:'short'})}, the day after the last block`)+
+  `<div class="seg"><button data-a="bMode" data-v="end" class="${SH.mode==='end'?'on':''}">Last day<small>${fd(e,{weekday:'short'})}</small></button><button data-a="bMode" data-v="pay" class="${SH.mode==='pay'?'on':''}">Payday<small>${fd(SH.pay||autoPay(SH.pm),{weekday:'short'})}${SH.pay?'':' (auto)'}</small></button></div>
+  <div class="sh" style="margin-bottom:6px"><button class="circ" data-a="mGo" data-v="-1" aria-label="Previous month">‹</button><div class="t"><b>${pmName(m)}</b></div><button class="circ" data-a="mGo" data-v="1" aria-label="Next month">›</button></div>
+  <div class="mcal">${['M','T','W','T','F','S','S'].map(x=>`<div class="dh">${x}</div>`).join('')}${g}</div>
+  <p class="${days%7||e<s?'neg':'sub'}" style="margin:0 0 12px">Tap the ${SH.mode==='end'?'last day of this block':'payday'}. ${e<s?'The last day must be after the start.':`${fd(s)} – ${fd(e)} · ${wk({start:s,end:e})}`}</p>
+  <button class="btn pri blk" data-a="saveBlock">Save</button>`},
+ restore:()=>head('Restore backup','This replaces everything in the app')+`<textarea id="bk" placeholder="Paste your backup here"></textarea><button class="btn pri blk" style="margin-top:12px" data-a="import">${SH.sure?'Tap again to replace all data':'Restore'}</button>`
+};
+const riseHTML=(h,s,m)=>{const nb=blockPm(addM(m,1));return`<b>£${h.toFixed(2)}/h</b><div class="sub">Overtime ×1.5 £${(h*1.5).toFixed(2)} · ×2 £${(h*2).toFixed(2)}<br>With shift ×1.5 £${((h+s)*1.5).toFixed(2)} · ×2 £${((h+s)*2).toFixed(2)}<br>New overtime rates for work from ${nb?fd(nb.start,{year:'numeric'}):pmName(m)}</div>`};
+function renderSheet(){if(!SH)return;sheet.innerHTML=SHEETS[SH.type]()}
+function onSheetIn(e){const t=e.target;
+ if(t.id==='prB'||t.id==='prM'){SH.b=val('prB');SH.m=val('prM');const b=P(SH.b),h=b>0?b*12/1950/100:0;document.getElementById('rpv').innerHTML=h?riseHTML(h,h/6,SH.m):'<span class="sub">Type the salary to see the new rates.</span>'}
+ if(t.id==='dMul'||t.id==='dCat'){SH.mul=val('dMul');SH.cat=val('dCat');document.getElementById('pv').innerHTML=pvHTML()}}
+sheet.addEventListener('input',onSheetIn);sheet.addEventListener('change',onSheetIn);
+ov.addEventListener('click',e=>{if(e.target===ov)closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&SH)closeSheet()});
+function openDay(d){const x=S.days[d]||{};openSheet({type:'day',d,st:statusOf(d),shift:shiftOf(d),ot:x.ot?String(x.ot/60):'0',mul:x.mul?String(x.mul):'',cat:x.cat||'',adv:!!(x.mul||x.cat),more:!['work','off'].includes(statusOf(d))||!!(x.mul||x.cat),lvh:x.lvm?String(x.lvm/60):'1'})}
+function saveDay(){const m=Math.round((parseFloat(SH.ot)||0)*60);
+ setDay(SH.d,{st:SH.st,shift:SH.shift,ot:m,mul:m&&SH.mul?+SH.mul:null,cat:m&&SH.cat?SH.cat:null,lvm:SH.st==='hrs'?Math.round((parseFloat(SH.lvh)||0)*60):null});save()}
+
+/* ================= actions ================= */
+const A={
+ tab:t=>{tab=t.dataset.v;render();scrollTo(0,0)},
+ openPay:t=>{payPm=t.dataset.v;tab='home';render();scrollTo(0,0)},
+ payGo:t=>{if(t.dataset.v){payPm=t.dataset.v;render()}},
+ calGo:t=>{calM=addM(calM,+t.dataset.v);render()},calToday:()=>{calM=todayISO().slice(0,7);render()},
+ calTo:t=>{if(t.dataset.v)calM=t.dataset.v;tab='cal';render();scrollTo(0,0)},
+ otSum:t=>openSheet({type:'otsum',pm:t.dataset.v}),
+ otRota:()=>{const b=blockPm(SH.pm);if(b)calM=b.start.slice(0,7);closeSheet();tab='cal';render();scrollTo(0,0)},
+ det:()=>{showDet=!showDet;render()},
+ taxGo:t=>{taxY+=+t.dataset.v;chSel={net:null,ot:null};render()},
+ bar:t=>{const[k,i]=t.dataset.v.split('|');chSel[k]=+i;render()},
+ lyGo:t=>{lyY+=+t.dataset.v;render()},blkGo:t=>{blkY+=+t.dataset.v;render()},
+ addOT:()=>openDay(todayISO()),day:t=>openSheet({type:'pick',d:t.dataset.v}),
+ pickOT:()=>openDay(SH.d),pickMore:()=>{const d=SH.d;openDay(d);SH.more=true;renderSheet()},
+ pickHol:()=>{const d=SH.d,x=S.days[d]||{},st=statusOf(d);openSheet({type:'hol',d,k:isLv(st)?st:'leave',lvh:x.lvm?String(x.lvm/60):'1'})},
+ hK:t=>{SH.k=t.dataset.v;renderSheet()},
+ hSave:()=>{const d=SH.d;setDay(d,{st:SH.k,lvm:SH.k==='hrs'?Math.round((parseFloat(SH.lvh)||0)*60):null});save();closeSheet();render();const B=bal(lyOf(d));flash(B.entSet?`Holiday saved · ${dd(B.left)} days left`:'Holiday saved')},
+ hDel:()=>{const d=SH.d;setDay(d,{st:defSt(d),lvm:null});save();closeSheet();render();flash('Holiday removed')},
+ close:()=>closeSheet(),
+ dayGo:t=>{saveDay();const d=add(SH.d,+t.dataset.v);render();openDay(d)},
+ otStep:t=>{SH.ot=String(Math.max(0,Math.min(24,(parseFloat(SH.ot)||0)+ +t.dataset.v)));renderSheet()},
+ otSet:t=>{SH.ot=t.dataset.v;renderSheet()},
+ dSt:t=>{SH.st=t.dataset.v;renderSheet()},dSh:t=>{SH.shift=t.dataset.v;renderSheet()},dAdv:()=>{SH.adv=true;renderSheet()},dMore:()=>{SH.more=true;renderSheet()},
+ dClear:()=>{delete S.days[SH.d];save();closeSheet();render();flash('Day cleared')},
+ lvStep:t=>{SH.lvh=String(Math.max(0.25,Math.min(S.set.dayMins/60,(parseFloat(SH.lvh)||0)+ +t.dataset.v)));renderSheet()},
+ dSave:()=>{saveDay();closeSheet();render();flash('Saved')},
+ shPayslip:()=>openSheet({type:'payslip',pm:payPm||nextPm()}),
+ saveAct:()=>{const r={gross:val('aG'),net:val('aN'),tax:val('aT'),ni:val('aI'),ytdG:val('aYG'),ytdT:val('aYT'),ytdN:val('aYN'),ytdNet:val('aYP')};
+  for(const v of Object.values(r))if(v!==''&&isNaN(P(v))){flash('Check the numbers, e.g. 1234.56');return}
+  if(Object.values(r).every(v=>v===''))delete S.actuals[SH.pm];else S.actuals[SH.pm]=r;save();closeSheet();render();flash('Payslip saved')},
+ clearAct:()=>{delete S.actuals[SH.pm];save();closeSheet();render()},
+ shExtra:()=>openSheet({type:'extra',pm:payPm||nextPm()}),
+ saveExtra:()=>{const pm=SH.pm,h=val('xH'),l=val('xL'),am=val('xA').replace('−','-');
+  if(h!==''&&isNaN(P(h))||am!==''&&isNaN(P(am))){flash('Check the amount, e.g. 150.00');return}
+  const a=S.adj[pm]=S.adj[pm]||{};a.hc=h;if(am!=='')(a.lines=a.lines||[]).push({id:uid(),label:l||'Extra',amt:am});
+  if(a.hc===''&&!(a.lines||[]).length)delete S.adj[pm];save();closeSheet();render();flash('Saved')},
+ delLine:t=>{const a=S.adj[SH.pm];if(a&&a.lines)a.lines=a.lines.filter(x=>x.id!==t.dataset.v);save();renderSheet();render()},
+ shBook:()=>openSheet({type:'book',k:'leave'}),
+ lvK:t=>{SH.f=val('lvF');SH.t=val('lvT');SH.h=val('lvH');SH.k=t.dataset.v;renderSheet()},
+ book:()=>{const f0=val('lvF'),to=val('lvT')||f0,k=SH.k||'leave',h=parseFloat(val('lvH'));let lvm=null;
+  if(k==='hrs'){if(!(h>0)||h*60>S.set.dayMins){flash(`Type hours between 0.25 and ${S.set.dayMins/60}`);return}lvm=Math.round(h*60)}
+  if(!f0){flash('Pick the first day');return}if(to<f0){flash('The last day is before the first');return}if((D(to)-D(f0))/864e5>366){flash('That is longer than a year');return}
+  let n=0,dy=0;for(let d=f0;d<=to;d=add(d,1)){if(!isWD(d)||statusOf(d)==='bank')continue;setDay(d,{st:k,lvm});n++;dy+=lvFrac(S.days[d]||{st:k,lvm})}
+  save();lyY=lyOf(f0);closeSheet();render();const B=bal(lyY);flash(n?`Booked ${dd(dy*S.set.dayMins/60)}h · ${dd(B.left)} days left`:'No working days in that range')},
+ delLeave:t=>{for(const d of t.dataset.v.split(','))setDay(d,{st:defSt(d),lvm:null});save();render();flash('Holiday cancelled')},
+ shAllow:()=>openSheet({type:'allow'}),addBuy:()=>{SH.keep={e:val('alE'),c:val('alC'),o:val('alO')};SH.addBuy=true;renderSheet();const k=SH.keep;document.getElementById('alE').value=k.e;document.getElementById('alC').value=k.c;document.getElementById('alO').value=k.o},
+ delPur:t=>{S.purchases.splice(+t.dataset.v,1);save();renderSheet();render()},
+ saveAllow:()=>{const e=val('alE'),c=val('alC'),o=val('alO');for(const v of[e,c,o])if(v!==''&&isNaN(parseFloat(v))){flash('Use numbers of days, e.g. 25');return}
+  S.leave[lyY]={ent:e,carry:c||'0',open:o||'0'};
+  const bd=val('puD')||'0';if(isNaN(parseFloat(bd))){flash('Use a number of days, e.g. 3');return}
+  const ex=S.purchases.find(p=>+p.ly===lyY);if(!ex||num(ex.days)!==num(bd)){S.purchases=S.purchases.filter(p=>+p.ly!==lyY);S.purchases.push({id:uid(),ly:String(lyY),days:bd})}
+  save();closeSheet();render();flash('Allowance saved')},
+ shRise:()=>openSheet({type:'rise'}),
+ saveRise:()=>{const b=P(val('prB')),m=val('prM');if(!(b>0)){flash('Type the new monthly salary');return}
+  const h=b*12/1950/100,s=h/6,r5=x=>(Math.round(x*1e5)/1e5).toFixed(5).replace(/0+$/,'').replace(/\.$/,'');
+  const nb=blockPm(addM(m,1)),d=nb?nb.start:m+'-01';
+  S.rates=S.rates.filter(r=>r.payFrom!==m);
+  S.rates.push({id:uid(),from:d,payFrom:m,base:(b/100).toFixed(2),prem:r5(s),b15:r5(h*1.5),b2:r5(h*2),s15:r5((h+s)*1.5),s2:r5((h+s)*2)});
+  save();closeSheet();render();flash(`Pay rise saved from ${pmName(m)}`)},
+ delRate:t=>{S.rates.splice(+t.dataset.v,1);save();render()},
+ shBlock:t=>{const b=blockPm(t.dataset.v);openSheet({type:'block',pm:b.pm,end:b.end,pay:b.pay||'',mode:'end',view:b.end.slice(0,7)})},
+ bMode:t=>{SH.mode=t.dataset.v;if(SH.mode==='pay'&&SH.pay)SH.view=SH.pay.slice(0,7);if(SH.mode==='pay'&&!SH.pay)SH.view=SH.pm;renderSheet()},
+ mGo:t=>{SH.view=addM(SH.view,+t.dataset.v);renderSheet()},
+ mPick:t=>{if(SH.mode==='end'){SH.end=t.dataset.v;SH.mode='pay';SH.view=SH.pay?SH.pay.slice(0,7):SH.pm}else SH.pay=t.dataset.v;renderSheet()},
+ saveBlock:()=>{const b=blockPm(SH.pm);if(SH.end<b.start){flash('The last day must be after the start');return}
+  b.end=SH.end;b.pay=SH.pay;b.draft=false;relink();ensureBlocks();save();closeSheet();render();flash(`${pmName(b.pm).split(' ')[0]} pay block saved`)},
+ setShift:t=>{S.set.anchor=iso(monT(todayISO()));S.set.anchorShift=t.dataset.v;save();render();flash('Rota updated')},
+ copyBk:async()=>{const j=JSON.stringify(S);try{await navigator.clipboard.writeText(j);flash('Backup copied. Paste it in your notes.')}catch(e){openSheet({type:'restore'});const b=document.getElementById('bk');b.value=j;b.select();flash('Select all and copy this text')}},
+ shRestore:()=>openSheet({type:'restore'}),
+ import:()=>{const raw=val('bk');let o;try{o=JSON.parse(raw)}catch(e){flash("That isn't a valid backup");return}
+  if(!o||o.v!==1||!o.set){flash("That isn't a WorkTrack backup");return}
+  if(!SH.sure){SH.sure=true;renderSheet();document.getElementById('bk').value=raw;return}
+  S=normalize(o);ensureBlocks();save();closeSheet();render();flash('Backup restored')},
+ wImport:()=>{const raw=val('wbk');let o;try{o=JSON.parse(raw)}catch(e){flash("That isn't a valid backup");return}if(!o||o.v!==1||!o.set){flash("That isn't a WorkTrack backup");return}S=normalize(o);ensureBlocks();save();tab='home';render();flash('Backup restored')},
+ reset:()=>{if(!confirmReset){confirmReset=true;render();return}S=SEED();ensureBlocks();confirmReset=false;save();render();flash('App reset')}
+};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||!A[t.dataset.a])return;if(t.dataset.a!=='reset'&&confirmReset){confirmReset=false}A[t.dataset.a](t,e)});
+document.querySelector('nav.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;if(tab==='home')payPm=null;confirmReset=false;render();scrollTo(0,0)});
+app.addEventListener('change',e=>{const t=e.target;if(t.dataset.bind==='set.taxCode'){const v=t.value.trim().toUpperCase();if(!/^\d{1,5}L$/.test(v)){flash('Use a code like 1257L');render();return}S.set.taxCode=v;save();render();flash('Tax code saved')}});
+
+{let sx=0,sy=0,on=false;
+ app.addEventListener('touchstart',e=>{if(SH||e.touches.length>1)return;const T=e.touches[0];sx=T.clientX;sy=T.clientY;on=!e.target.closest('.bars,input,textarea,select,.scroll')},{passive:true});
+ app.addEventListener('touchend',e=>{if(!on||SH)return;on=false;const T=e.changedTouches[0],dx=T.clientX-sx,dy=T.clientY-sy;if(Math.abs(dx)<60||Math.abs(dy)>Math.abs(dx)*.6)return;const dir=dx<0?1:-1;
+  if(tab==='cal'){calM=addM(calM,dir);render()}
+  else if(tab==='home'){const L=payList(),i=L.indexOf(payPm&&L.includes(payPm)?payPm:nextPm()),n=L[i+dir];if(n){payPm=n;render()}}
+  else if(tab==='leave'){lyY+=dir;render()}
+  else if(tab==='tax'){const nt=taxY+dir;if(nt>=2023&&nt<=tyOf(nextPm())+1){taxY=nt;chSel={net:null,ot:null};render()}}},{passive:true})}
+function vWelcome(){return`<div class="top"><div class="t"><h1>WorkTrack</h1><div class="sub">Your pay, overtime and holidays</div></div></div>
+ <div class="card"><h2>Bring your data across</h2><p class="sub" style="margin:6px 0 12px">1. In the Claude version, go to Setup → Copy backup.<br>2. Paste it here and tap Restore.</p>
+ <textarea id="wbk" placeholder="Paste your backup here"></textarea><button class="btn pri blk" style="margin-top:12px" data-a="wImport">Restore</button></div>
+ <button class="btn link blk" data-a="shRise">Start fresh with my salary instead</button>
+ <p class="foot">Your data stays on this phone. Copy a backup now and then from Setup.</p>`}
+function render(){memo.clear();
+ if(!S.updated&&!(P(S.rates[0].base)>0)&&S.rates.length===1){app.innerHTML=vWelcome();document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('on'));return}
+ try{app.innerHTML=({home:vPay,cal:vCal,leave:vLeave,tax:vTax,set:vSet})[tab]()}catch(err){app.innerHTML=`<p class="hint">Something went wrong showing this page (${esc(err.message)}). Your data is safe.</p>`}
+ document.querySelectorAll('nav.tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.tab===tab);b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false')});syncLabel()}
+if(ensureBlocks())try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+render();initCloud();
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
