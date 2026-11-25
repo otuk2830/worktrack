@@ -443,6 +443,7 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
  <div class="lbl">Backup</div>
  <div class="card"><div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div></div>
+ <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">Version: 25 Nov 2026, 06:38</div></div><button class="btn" data-a="upd">Update</button></div></div>
  <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
 
 /* ================= sheets ================= */
@@ -608,6 +609,7 @@ const A={
   if(!SH.sure){SH.sure=true;renderSheet();document.getElementById('bk').value=raw;return}
   S=normalize(o);ensureBlocks();save();closeSheet();render();flash('Backup restored')},
  wImport:()=>{const raw=val('wbk');let o;try{o=JSON.parse(raw)}catch(e){flash("That isn't a valid backup");return}if(!o||o.v!==1||!o.set){flash("That isn't a WorkTrack backup");return}S=normalize(o);ensureBlocks();save();tab='home';render();flash('Backup restored')},
+ upd:async()=>{flash('Checking for updates…');try{if('serviceWorker' in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const x of rs)await x.update()}if(window.caches){for(const k of await caches.keys())await caches.delete(k)}await fetch('./index.html',{cache:'reload'})}catch(e){}location.reload()},
  reset:()=>{if(!confirmReset){confirmReset=true;render();return}S=SEED();ensureBlocks();confirmReset=false;save();render();flash('App reset')}
 };
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||!A[t.dataset.a])return;if(t.dataset.a!=='reset'&&confirmReset){confirmReset=false}A[t.dataset.a](t,e)});
