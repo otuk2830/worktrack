@@ -13,10 +13,14 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <title>WorkTrack</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/hg-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/hg-800.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+@font-face{font-family:"Hanken Grotesk";font-weight:400;font-display:swap;src:url(fonts/hg-400.woff2) format("woff2")}
+@font-face{font-family:"Hanken Grotesk";font-weight:600;font-display:swap;src:url(fonts/hg-600.woff2) format("woff2")}
+@font-face{font-family:"Hanken Grotesk";font-weight:700;font-display:swap;src:url(fonts/hg-700.woff2) format("woff2")}
+@font-face{font-family:"Hanken Grotesk";font-weight:800;font-display:swap;src:url(fonts/hg-800.woff2) format("woff2")}
+
 /* VOICE: plain and friendly, a pocket tool you check on the bus
    IDEA: a shift rota pinned on the warehouse wall: sun-yellow earlies, evening-indigo lates
    PICTURE: your next pay in one big number; the month as a grid of coloured days
@@ -443,7 +447,7 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
  <div class="lbl">Backup</div>
  <div class="card"><div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div></div>
- <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">Version: 25 Nov 2026, 06:38</div></div><button class="btn" data-a="upd">Update</button></div></div>
+ <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">Version: 25 Nov 2026, 07:09</div></div><button class="btn" data-a="upd">Update</button></div></div>
  <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
 
 /* ================= sheets ================= */
@@ -636,7 +640,7 @@ if(ensureBlocks())try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
 for(const ev of ['gesturestart','gesturechange','gestureend'])document.addEventListener(ev,e=>e.preventDefault(),{passive:false});
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 render();initCloud();
-if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 </script>
 </body>
