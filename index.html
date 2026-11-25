@@ -89,6 +89,13 @@ h2{font-size:17px;margin:0;font-weight:700}
 .go{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .go .v{font-size:22px;font-weight:800}
 .chev{font-size:22px;color:var(--mute)}
+.bk{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 0;color:var(--ink);font:inherit}
+.bk .r1{display:flex;align-items:center;gap:8px}.bk .r1 b{font-size:17px;font-weight:700}.bk .pd{margin-left:auto;font-weight:700;white-space:nowrap}
+.bk .r2{display:flex;align-items:center;gap:12px;margin-top:8px;color:var(--mute);font-size:14px;line-height:16px}
+.bk.paid{opacity:.6}.bk.paid .pd{font-weight:600}
+.wks{display:flex;align-items:center;gap:3px;width:87px;flex:none;height:16px}.wks .w{display:block;margin:0!important;width:15px;height:6px;border-radius:3px;background:var(--line)}.wks .w.f{background:var(--acc)}.wks .w.c{background:linear-gradient(90deg,var(--acc) 50%,var(--line) 50%)}
+.bk.now,.bk.wait{background:var(--accSoft);border-radius:14px;padding:12px;margin:2px -12px;width:calc(100% + 24px);border-top-color:transparent}.bk.now+.bk,.bk.wait+.bk{border-top-color:transparent}
+.tag.on{background:var(--acc);color:var(--accInk)}
 .ln{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
 .ln:first-child{border-top:0;padding-top:2px}
 .ln>span:first-child{flex:1;min-width:0}
@@ -359,7 +366,7 @@ function ensureBlocks(){let B=sortedBlocks(),last=B[B.length-1],n=0;const target
  while(last&&last.end<target&&n<60){const pm=addM(last.pm,1),s=add(last.end,1);last={pm,start:s,end:add(s,weeksFor(pm)*7-1),pay:'',appr:'',draft:true};S.blocks.push(last);n++}return n}
 
 /* ================= UI state ================= */
-let showDet=false,taxY=tyOf(todayISO().slice(0,7)),tab='home',calM=todayISO().slice(0,7),payPm=null,lyY=lyOf(todayISO()),blkY=+todayISO().slice(0,4),flashT=null,confirmReset=false;
+let showDet=false,taxY=tyOf(todayISO().slice(0,7)),tab='home',calM=todayISO().slice(0,7),payPm=null,lyY=lyOf(todayISO()),blkY=+todayISO().slice(0,4),blkSet=false,flashT=null,confirmReset=false;
 let SH=null; /* open sheet: {type,...} */
 const app=document.getElementById('app'),ov=document.getElementById('ov'),sheet=document.getElementById('sheet');
 function flash(t){let f=document.querySelector('.flash');if(!f){f=document.createElement('div');f.className='flash';f.setAttribute('role','status');document.body.appendChild(f)}f.textContent=t;clearTimeout(flashT);flashT=setTimeout(()=>f.remove(),2600)}
@@ -405,7 +412,7 @@ function vPay(){const L=payList(),np=nextPm(),pm=payPm&&L.includes(payPm)?payPm:
   <div class="sec">DEDUCTIONS</div>${c.tax<0?`<div class="ln"><span>Tax refund<span class="s">overpaid earlier this tax year</span></span><span class="r">+${money(-c.tax)}</span></div>`:`<div class="ln"><span>Tax<span class="s">${esc(c.code)}${codeNote(c.code)?' · '+codeNote(c.code):''}</span></span><span class="r neg">−${money(c.tax)}</span></div>`}<div class="ln"><span>National Insurance</span><span class="r neg">−${money(c.ni)}</span></div>${c.AT.map(x=>`<div class="ln"><span>${esc(x.l)}<span class="s">after tax</span></span><span class="r neg">${money(x.p)}</span></div>`).join('')}
   <div class="ln tot"><span>Take-home</span><span class="r">${money(c.net)}</span></div>
   ${act?`<p class="sub" style="margin:8px 0 0">${Math.abs(P(a.net)-c.net)<=1?'✓ Matches your payslip.':`Your payslip says ${money(P(a.net))}, ${money(Math.abs(P(a.net)-c.net))} ${P(a.net)>c.net?'more':'less'} than this estimate.`}</p>`:''}</div>`}`}
- ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.14 · 25 Nov 2026</p>`}
+ ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.21 · 25 Nov 2026</p>`}
 const CATL={b15:'×1.5',b2:'×2',s15:'×1.5 + shift',s2:'×2 + shift'};
 function otSum(from,to){const g={},days=[];for(let d=from;d<=to;d=add(d,1)){const o=otInfo(d);if(o){days.push([d,o]);const x=g[o.cat]=g[o.cat]||{m:0,p:0};x.m+=o.m;x.p+=o.pay}}
  const rows=CORD.filter(k=>g[k]).map(k=>({k,m:g[k].m,p:Math.round(g[k].p)}));return{rows,days,m:rows.reduce((a,x)=>a+x.m,0),p:rows.reduce((a,x)=>a+x.p,0)}}
@@ -475,8 +482,9 @@ function vLeave(){const B=bal(lyY),t=todayISO(),G=groups(B.days),fut=G.filter(g=
 
 function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,b)=>a.payFrom<b.payFrom?1:-1);
  const ok=FIX.length>0&&FIX.every(f=>{let g=0;for(const x of f.L)g+=Array.isArray(x)?lineAmt(x[0],x[1]):P(x);const t=taxDue(P(f.pg)+g,f.m,2026)-P(f.pt),n=niFor(g,2026);return g===P(f.g)&&t===P(f.t)&&n===P(f.n)});
+ if(!blkSet){const t=todayISO(),cb=sortedBlocks().find(b=>payOf(b)>t);if(cb)blkY=+cb.pm.slice(0,4)}
  const yb=sortedBlocks().filter(b=>+b.pm.slice(0,4)===blkY),ys=[...new Set(S.blocks.map(b=>+b.pm.slice(0,4)))].sort();
- return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.14 · 25 Nov 2026</div></div></div>
+ return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.21 · 25 Nov 2026</div></div></div>
  <div class="lbl">Salary</div>
  <div class="card"><div class="big" style="font-size:40px;margin-top:0">${money(P(cur.base))}<span class="sub" style="font-size:16px;letter-spacing:0;font-weight:600"> /month</span></div>
   <div class="sub">£${hourly(cur).toFixed(2)} an hour${ok?' · ✓ matches your last 6 payslips':''}</div>
@@ -484,15 +492,18 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
   <button class="btn pri blk" style="margin-top:12px" data-a="shRise">Add pay rise</button></div>
  <div class="lbl">Pay blocks</div>
  <div class="card"><div class="top c" style="margin:0 0 6px"><button class="circ" data-a="blkGo" data-v="-1" aria-label="Previous year"${blkY>ys[0]?'':' disabled'}>‹</button><div class="t"><h2>${blkY}</h2></div><button class="circ" data-a="blkGo" data-v="1" aria-label="Next year"${blkY<ys[ys.length-1]?'':' disabled'}>›</button></div>
-  ${yb.map(b=>`<button class="ln btnln" data-a="shBlock" data-v="${b.pm}"><span>${pmName(b.pm).split(' ')[0]} ${b.draft?'<span class="tag">estimated</span>':''}<span class="s">${fd(b.start)} – ${fd(b.end)} · ${wk(b)}</span></span><span class="r">${b.pay?'':'<span class="sub">'}Paid ${fd(payOf(b))}${b.pay?'':'</span>'} <span class="chev">›</span></span></button>`).join('')}
-  <p class="sub" style="margin:10px 0 0">Tap a month to set its dates. Estimated months follow the usual 5-4-4 weeks until you change them.</p></div>
+  ${(()=>{const t=todayISO();return yb.map(b=>{const n=Math.round(((D(b.end)-D(b.start))/864e5+1)/7),pd=payOf(b),st=pd<=t?'paid':b.start<=t&&t<=b.end?'now':b.end<t?'wait':'next';
+   const pills=Array.from({length:n},(_,i)=>{const a=add(b.start,7*i),z=add(a,6);return`<span class="w ${z<t?'f':a<=t?'c':''}"></span>`}).join('');
+   return`<button class="bk ${st}" data-a="shBlock" data-v="${b.pm}"><div class="r1"><b>${pmName(b.pm).split(' ')[0]}</b>${st==='now'?'<span class="tag on">Working now</span>':st==='wait'?'<span class="tag on">Waiting for pay</span>':b.draft?'<span class="tag">estimated</span>':''}<span class="pd">${st==='paid'?'Paid ✓ '+fd(pd):fd(pd,{weekday:'short'})}</span></div>
+   <div class="r2"><span class="wks" aria-label="${n} weeks">${pills}</span><span>${fd(b.start)} – ${fd(b.end)}</span></div></button>`}).join('')})()}
+  <p class="sub" style="margin:12px 0 0">Each bar is a week. Tap a month to change its dates.</p></div>
  <div class="lbl">Shifts</div>
  <div class="card"><div class="sub" style="margin-bottom:8px">This week you're on</div><div class="seg" style="margin:0"><button data-a="setShift" data-v="E" class="${shiftOf(iso(monT(todayISO())))==='E'?'on':''}">Early<small>06–14</small></button><button data-a="setShift" data-v="L" class="${shiftOf(iso(monT(todayISO())))==='L'?'on':''}">Late<small>14–22</small></button></div></div>
  <div class="lbl">Tax code</div>
  <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
  <div class="lbl">Backup</div>
  <div class="card">${window.claude?'':`<button class="btn pri blk" data-a="saveBk">Save backup file</button><p class="sub" style="margin:8px 0 12px;text-align:center">${bkLast()?'Last backup '+fd(new Date(bkLast()).toISOString().slice(0,10),{year:'numeric'}):'No backup saved yet'} · save it to Files or iCloud Drive</p>`}<div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div><button class="btn blk" style="margin-top:10px" data-a="shAddSlips">Add payslips from a file</button></div>
- <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.14 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
+ <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.21 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
  <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
 
 /* ================= sheets ================= */
@@ -629,7 +640,7 @@ const A={
  det:()=>{showDet=!showDet;render()},
  taxGo:t=>{taxY+=+t.dataset.v;chSel={net:null,ot:null};render()},
  bar:t=>{const[k,i]=t.dataset.v.split('|');chSel[k]=+i;render()},
- lyGo:t=>{lyY+=+t.dataset.v;render()},blkGo:t=>{blkY+=+t.dataset.v;render()},
+ lyGo:t=>{lyY+=+t.dataset.v;render()},blkGo:t=>{blkY+=+t.dataset.v;blkSet=true;render()},
  addOT:()=>openDay(todayISO()),day:t=>openSheet({type:'pick',d:t.dataset.v}),
  pickOT:()=>openDay(SH.d),pickMore:()=>{const d=SH.d;openDay(d);SH.more=true;renderSheet()},
  pickHol:()=>{const d=SH.d,x=S.days[d]||{},st=statusOf(d);openSheet({type:'hol',d,k:isLv(st)?st:'leave',lvh:x.lvm?String(x.lvm/60):'1'})},
