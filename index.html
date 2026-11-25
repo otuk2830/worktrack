@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#f3f4f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -27,7 +27,8 @@
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#0f1115;--card:#1a1d23;--soft:#262a32;--line:#2c313a;--ink:#f1f3f7;--mute:#9aa3b2;--acc:#86a2ff;--accInk:#0f1115;--accSoft:#25304f;--late:#6d72e6;--neg:#ff8a9b;--shadow:none}}
 :root[data-theme=dark]{color-scheme:dark;--bg:#0f1115;--card:#1a1d23;--soft:#262a32;--line:#2c313a;--ink:#f1f3f7;--mute:#9aa3b2;--acc:#86a2ff;--accInk:#0f1115;--accSoft:#25304f;--late:#6d72e6;--neg:#ff8a9b;--shadow:none}
 *{box-sizing:border-box;min-width:0}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;touch-action:manipulation}
+*{touch-action:manipulation}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Hanken Grotesk",system-ui,-apple-system,sans-serif;overflow-x:clip}
 button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 main{max-width:600px;margin:auto;padding:18px 16px 120px}
@@ -107,7 +108,7 @@ h2{font-size:17px;margin:0;font-weight:700}
 input,select,textarea{display:block;width:100%;max-width:100%;font:inherit;font-size:17px;min-height:50px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);-webkit-appearance:none;appearance:none;margin:0}
 input[type=date]{line-height:48px;text-align:left}
 input::-webkit-date-and-time-value{text-align:left}
-textarea{padding:12px;min-height:120px;font-size:14px}
+textarea{padding:12px;min-height:120px;font-size:16px}
 :focus-visible{outline:2.5px solid var(--acc);outline-offset:2px}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 12px}
 .seg{display:flex;background:var(--soft);border-radius:14px;padding:4px;gap:4px;margin-bottom:14px}
@@ -630,6 +631,8 @@ function render(){memo.clear();
  try{app.innerHTML=({home:vPay,cal:vCal,leave:vLeave,tax:vTax,set:vSet})[tab]()}catch(err){app.innerHTML=`<p class="hint">Something went wrong showing this page (${esc(err.message)}). Your data is safe.</p>`}
  document.querySelectorAll('nav.tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.tab===tab);b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false')});syncLabel()}
 if(ensureBlocks())try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+for(const ev of ['gesturestart','gesturechange','gestureend'])document.addEventListener(ev,e=>e.preventDefault(),{passive:false});
+document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 render();initCloud();
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
