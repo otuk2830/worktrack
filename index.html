@@ -55,11 +55,11 @@ html{-webkit-text-size-adjust:100%;touch-action:manipulation}
 *{touch-action:manipulation}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Hanken Grotesk",system-ui,-apple-system,sans-serif;overflow-x:clip}
 button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
-main{max-width:600px;margin:auto;padding:18px 16px 120px}
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--card);border-top:1px solid var(--line);padding:4px 6px calc(4px + env(safe-area-inset-bottom))}
+main{max-width:600px;margin:auto;padding:18px 16px calc(110px + env(safe-area-inset-bottom))}
+nav.tabs{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:10;max-width:520px;margin:0 auto;background:color-mix(in srgb,var(--card) 88%,transparent);-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);border:1px solid var(--line);border-radius:26px;padding:4px 6px;box-shadow:0 8px 30px rgba(0,0,0,.22),0 1px 3px rgba(0,0,0,.12)}
 nav.tabs .in{display:flex;max-width:600px;margin:auto}
-nav.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:54px;padding:6px 0;border:0;background:none;color:var(--mute);font-size:12px;font-weight:600}
-nav.tabs button.on{color:var(--acc)}
+nav.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:56px;border-radius:20px;padding:6px 0;border:0;background:none;color:var(--mute);font-size:12px;font-weight:600}
+nav.tabs button.on{color:var(--acc);background:var(--accSoft)}
 nav.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .top{display:flex;align-items:center;gap:12px;margin:6px 0 16px}
 .top .t{flex:1;min-width:0}.top.c .t{text-align:center}
@@ -164,7 +164,7 @@ textarea{padding:12px;min-height:120px;font-size:16px}
 .md.pay::after{content:"£";position:absolute;right:3px;top:1px;font-size:10px;font-weight:800;color:var(--neg)}
 .md.payd{box-shadow:inset 0 0 0 2px var(--neg)}
 .md.out{opacity:.35}
-.flash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:700;z-index:40;max-width:90vw;text-align:center}
+.flash{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:700;z-index:40;max-width:90vw;text-align:center}
 .foot{text-align:center;font-size:13px;color:var(--mute);margin-top:18px}
 @media(max-width:380px){.trio b{font-size:13.5px}.day{font-size:14px}.cal{gap:4px}.day .ot{font-size:9.5px;padding:2px 3px}}
 </style>
@@ -382,7 +382,7 @@ function vPay(){const L=payList(),np=nextPm(),pm=payPm&&L.includes(payPm)?payPm:
   <div class="sec">DEDUCTIONS</div><div class="ln"><span>Tax</span><span class="r neg">−${money(c.tax)}</span></div><div class="ln"><span>National Insurance</span><span class="r neg">−${money(c.ni)}</span></div>
   <div class="ln tot"><span>Take-home</span><span class="r">${money(c.net)}</span></div>
   ${act?`<p class="sub" style="margin:8px 0 0">${Math.abs(P(a.net)-c.net)<=1?'✓ Matches your payslip.':`Your payslip says ${money(P(a.net))}, ${money(Math.abs(P(a.net)-c.net))} ${P(a.net)>c.net?'more':'less'} than this estimate.`}</p>`:''}</div>`}`}
- ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.6 · 25 Nov 2026</p>`}
+ ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.7 · 25 Nov 2026</p>`}
 const CATL={b15:'×1.5',b2:'×2',s15:'×1.5 + shift',s2:'×2 + shift'};
 function otSum(from,to){const g={},days=[];for(let d=from;d<=to;d=add(d,1)){const o=otInfo(d);if(o){days.push([d,o]);const x=g[o.cat]=g[o.cat]||{m:0,p:0};x.m+=o.m;x.p+=o.pay}}
  const rows=CORD.filter(k=>g[k]).map(k=>({k,m:g[k].m,p:Math.round(g[k].p)}));return{rows,days,m:rows.reduce((a,x)=>a+x.m,0),p:rows.reduce((a,x)=>a+x.p,0)}}
@@ -451,7 +451,7 @@ function vLeave(){const B=bal(lyY),t=todayISO(),G=groups(B.days),fut=G.filter(g=
 function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,b)=>a.payFrom<b.payFrom?1:-1);
  const ok=FIX.length>0&&FIX.every(f=>{let g=0;for(const x of f.L)g+=Array.isArray(x)?lineAmt(x[0],x[1]):P(x);const t=taxDue(P(f.pg)+g,f.m,2026)-P(f.pt),n=niFor(g,2026);return g===P(f.g)&&t===P(f.t)&&n===P(f.n)});
  const yb=sortedBlocks().filter(b=>+b.pm.slice(0,4)===blkY),ys=[...new Set(S.blocks.map(b=>+b.pm.slice(0,4)))].sort();
- return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.6 · 25 Nov 2026</div></div></div>
+ return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.7 · 25 Nov 2026</div></div></div>
  <div class="lbl">Salary</div>
  <div class="card"><div class="big" style="font-size:40px;margin-top:0">${money(P(cur.base))}<span class="sub" style="font-size:16px;letter-spacing:0;font-weight:600"> /month</span></div>
   <div class="sub">£${hourly(cur).toFixed(2)} an hour${ok?' · ✓ matches your last 6 payslips':''}</div>
@@ -467,7 +467,7 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
  <div class="lbl">Backup</div>
  <div class="card"><div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div></div>
- <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.6 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
+ <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.7 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
  <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
 
 /* ================= sheets ================= */
