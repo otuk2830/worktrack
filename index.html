@@ -405,7 +405,7 @@ function vPay(){const L=payList(),np=nextPm(),pm=payPm&&L.includes(payPm)?payPm:
   <div class="sec">DEDUCTIONS</div>${c.tax<0?`<div class="ln"><span>Tax refund<span class="s">overpaid earlier this tax year</span></span><span class="r">+${money(-c.tax)}</span></div>`:`<div class="ln"><span>Tax<span class="s">${esc(c.code)}${codeNote(c.code)?' · '+codeNote(c.code):''}</span></span><span class="r neg">−${money(c.tax)}</span></div>`}<div class="ln"><span>National Insurance</span><span class="r neg">−${money(c.ni)}</span></div>${c.AT.map(x=>`<div class="ln"><span>${esc(x.l)}<span class="s">after tax</span></span><span class="r neg">${money(x.p)}</span></div>`).join('')}
   <div class="ln tot"><span>Take-home</span><span class="r">${money(c.net)}</span></div>
   ${act?`<p class="sub" style="margin:8px 0 0">${Math.abs(P(a.net)-c.net)<=1?'✓ Matches your payslip.':`Your payslip says ${money(P(a.net))}, ${money(Math.abs(P(a.net)-c.net))} ${P(a.net)>c.net?'more':'less'} than this estimate.`}</p>`:''}</div>`}`}
- ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.13 · 25 Nov 2026</p>`}
+ ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.14 · 25 Nov 2026</p>`}
 const CATL={b15:'×1.5',b2:'×2',s15:'×1.5 + shift',s2:'×2 + shift'};
 function otSum(from,to){const g={},days=[];for(let d=from;d<=to;d=add(d,1)){const o=otInfo(d);if(o){days.push([d,o]);const x=g[o.cat]=g[o.cat]||{m:0,p:0};x.m+=o.m;x.p+=o.pay}}
  const rows=CORD.filter(k=>g[k]).map(k=>({k,m:g[k].m,p:Math.round(g[k].p)}));return{rows,days,m:rows.reduce((a,x)=>a+x.m,0),p:rows.reduce((a,x)=>a+x.p,0)}}
@@ -476,7 +476,7 @@ function vLeave(){const B=bal(lyY),t=todayISO(),G=groups(B.days),fut=G.filter(g=
 function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,b)=>a.payFrom<b.payFrom?1:-1);
  const ok=FIX.length>0&&FIX.every(f=>{let g=0;for(const x of f.L)g+=Array.isArray(x)?lineAmt(x[0],x[1]):P(x);const t=taxDue(P(f.pg)+g,f.m,2026)-P(f.pt),n=niFor(g,2026);return g===P(f.g)&&t===P(f.t)&&n===P(f.n)});
  const yb=sortedBlocks().filter(b=>+b.pm.slice(0,4)===blkY),ys=[...new Set(S.blocks.map(b=>+b.pm.slice(0,4)))].sort();
- return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.13 · 25 Nov 2026</div></div></div>
+ return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.14 · 25 Nov 2026</div></div></div>
  <div class="lbl">Salary</div>
  <div class="card"><div class="big" style="font-size:40px;margin-top:0">${money(P(cur.base))}<span class="sub" style="font-size:16px;letter-spacing:0;font-weight:600"> /month</span></div>
   <div class="sub">£${hourly(cur).toFixed(2)} an hour${ok?' · ✓ matches your last 6 payslips':''}</div>
@@ -492,7 +492,7 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
  <div class="lbl">Backup</div>
  <div class="card">${window.claude?'':`<button class="btn pri blk" data-a="saveBk">Save backup file</button><p class="sub" style="margin:8px 0 12px;text-align:center">${bkLast()?'Last backup '+fd(new Date(bkLast()).toISOString().slice(0,10),{year:'numeric'}):'No backup saved yet'} · save it to Files or iCloud Drive</p>`}<div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div><button class="btn blk" style="margin-top:10px" data-a="shAddSlips">Add payslips from a file</button></div>
- <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.13 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
+ <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.14 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
  <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
 
 /* ================= sheets ================= */
@@ -565,7 +565,7 @@ const SHEETS={
   <button class="btn pri blk" style="margin-top:8px" data-a="saveAllow">Save</button>`},
  rise:()=>{const m=SH.m||addM(todayISO().slice(0,7),1),b=P(SH.b||''),h=b>0?b*12/1950/100:0,s=h/6;
   return head('Pay rise','Everything else is worked out for you')+
-  f('New monthly salary £',`<input id="prB" inputmode="decimal" placeholder="e.g. 2692.89" value="${esc(SH.b||'')}">`)+
+  `<div class="two">${f('Pay rise %',`<input id="prP" inputmode="decimal" placeholder="e.g. 3.5" value="${esc(SH.p||'')}">`)}${f('New monthly salary £',`<input id="prB" inputmode="decimal" placeholder="e.g. 2692.89" value="${esc(SH.b||'')}">`)}</div><p class="sub" style="margin:-6px 0 12px">Type the % or the salary. Old salary ${money(P(baseFor(addM(m,-1)).base))}. When you get the payslip, put the exact salary in, since Almac's rounding can differ by a few pence.</p>`+
   f('First payslip with the new salary',`<select id="prM">${pmOpts(m,todayISO().slice(0,7),24)}</select>`)+
   `<div class="pv" id="rpv">${h?riseHTML(h,s,m):'<span class="sub">Type the salary to see the new rates.</span>'}</div><button class="btn pri blk" data-a="saveRise">Save pay rise</button>`},
  block:()=>{const b=blockPm(SH.pm),m=SH.view;const s=b.start,e=SH.end,first=m+'-01',st=iso(monT(first)),ls=add(addM(m,1)+'-01',-1);let g='';
@@ -596,13 +596,17 @@ const SHEETS={
   return head(ttl,per)+`<div class="card">${R.map(x=>`<div class="ln${x[2]?' tot':''}"><span>${esc(x[0])}</span><span class="r">${esc(x[1])}</span></div>`).join('')}</div><button class="btn pri blk" data-a="copyYsum">Copy summary</button>`},
  restore:()=>head('Restore backup','This replaces everything in the app')+`<label class="btn blk" style="margin-bottom:10px">Choose file<input type="file" accept=".json,.txt,application/json,text/plain" data-f="bk" style="display:none"></label><textarea id="bk" placeholder="…or paste your backup here"></textarea><button class="btn pri blk" style="margin-top:12px" data-a="import">${SH.sure?'Tap again to replace all data':'Restore'}</button>`
 };
-const riseHTML=(h,s,m)=>{const nb=blockPm(addM(m,1));return`<b>£${h.toFixed(2)}/h</b><div class="sub">Overtime ×1.5 £${(h*1.5).toFixed(2)} · ×2 £${(h*2).toFixed(2)}<br>With shift ×1.5 £${((h+s)*1.5).toFixed(2)} · ×2 £${((h+s)*2).toFixed(2)}<br>New overtime rates for work from ${nb?fd(nb.start,{year:'numeric'}):pmName(m)}</div>`};
+const riseHTML=(h,s,m)=>{const nb=blockPm(addM(m,1)),m1=pmName(m).split(' ')[0],m2=pmName(addM(m,1)).split(' ')[0];return`<b>£${h.toFixed(2)}/h</b><div class="sub">Overtime ×1.5 £${(h*1.5).toFixed(2)} · ×2 £${(h*2).toFixed(2)}<br>With shift ×1.5 £${((h+s)*1.5).toFixed(2)} · ×2 £${((h+s)*2).toFixed(2)}<br><br>${m1} payslip: new salary, but overtime and shift allowance still at the old rates.<br>From ${m2} payslip: everything at the new rates (work from ${nb?fd(nb.start,{year:'numeric'}):m2}).</div>`};
 function actCheck(){const g=P(val('aG')),sc=P(val('aS'))||0,n=P(val('aN')),t=P(val('aT')),ni=P(val('aI'));if(isNaN(g))return'<span class="sub">Type the numbers and the app checks them.</span>';
  const tx=g-sc;if(isNaN(t)||isNaN(ni)||isNaN(n))return`<span class="sub">Taxable pay</span> <b>${money(tx)}</b>`;const calc=tx-t-ni,ok=Math.abs(calc-n)<=1;
  return`<span class="sub">Taxable pay</span> <b>${money(tx)}</b><div class="sub">${ok?'✓ Take-home adds up':`Take-home should be ${money(calc)}, check the numbers`}</div>`}
 function renderSheet(){if(!SH)return;sheet.innerHTML=SHEETS[SH.type]()}
 function onSheetIn(e){const t=e.target;
- if(t.id==='prB'||t.id==='prM'){SH.b=val('prB');SH.m=val('prM');const b=P(SH.b),h=b>0?b*12/1950/100:0;document.getElementById('rpv').innerHTML=h?riseHTML(h,h/6,SH.m):'<span class="sub">Type the salary to see the new rates.</span>'}
+ if(t.id==='prP'||t.id==='prB'||t.id==='prM'){const old=P(baseFor(addM(val('prM'),-1)).base);
+  if(t.id==='prP'){const p=parseFloat(val('prP').replace(',','.'));document.getElementById('prB').value=p>0&&old>0?(Math.round(old*(1+p/100))/100).toFixed(2):''}
+  else if(t.id==='prB'){const b=P(val('prB'));document.getElementById('prP').value=b>0&&old>0?String(Math.round((b/old-1)*10000)/100):''}
+  else{const p=parseFloat(val('prP').replace(',','.'));if(p>0&&old>0)document.getElementById('prB').value=(Math.round(old*(1+p/100))/100).toFixed(2)}
+  SH.p=val('prP');SH.b=val('prB');SH.m=val('prM');const b=P(SH.b),h=b>0?b*12/1950/100:0;document.getElementById('rpv').innerHTML=h?riseHTML(h,h/6,SH.m):'<span class="sub">Type the salary to see the new rates.</span>'}
  if(['aG','aS','aN','aT','aI'].includes(t.id)){const e=document.getElementById('apv');if(e)e.innerHTML=actCheck()}
  if(t.id==='dMul'||t.id==='dCat'){SH.mul=val('dMul');SH.cat=val('dCat');document.getElementById('pv').innerHTML=pvHTML()}}
 document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.f||!t.files||!t.files[0])return;t.files[0].text().then(x=>{const el=document.getElementById(t.dataset.f);if(el){el.value=x;flash('File loaded')}}).catch(()=>flash('Could not read that file'))});
