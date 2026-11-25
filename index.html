@@ -294,26 +294,46 @@ const tyOf=pm=>{const[y,m]=pm.split('-').map(Number);return m>=4?y:y-1};
 const tmOf=pm=>((+pm.slice(5)-4+12)%12)+1;
 const pmAt=(ty,tm)=>addM(ty+'-04',tm-1);
 function cfg(ty){const K=Object.keys(S.tax).sort();let c=S.tax[K[0]];for(const k of K)if(+k<=ty)c=S.tax[k];return c}
-function allowance(code){const m=/^(\d{1,5})L\b/i.exec(String(code??S.set.taxCode).trim());return m?+m[1]*10+9:null}
+/* tax codes: L/M/N/T numbers, K codes, 0T, BR, D0, D1, NT; S/C prefix ignored; M1, W1, X, wk1/mth1 = non-cumulative (emergency) */
+function parseCode(code){let s=String(code??S.set.taxCode).toUpperCase().trim();if(!s)return null;
+ let nc=/WK\s*1|MTH\s*1|\bM1\b|\bW1\b|NON[- ]?CUM|EMERGENCY/.test(s);
+ s=s.replace(/WK\s*1|MTH\s*1|\bM1\b|\bW1\b|NON[- ]?CUM(ULATIVE)?|EMERGENCY|\//g,' ').trim();let t=s.split(/\s+/)[0]||'';
+ if(/X$/.test(t)&&t.length>1){nc=true;t=t.slice(0,-1)}
+ t=t.replace(/^[SC](?=K\d|\d|BR$|D0$|D1$|NT$)/,'');let m;
+ if(t==='BR')return{k:'flat',r:20,nc,ann:0};if(t==='D0')return{k:'flat',r:40,nc,ann:0};if(t==='D1')return{k:'flat',r:45,nc,ann:0};
+ if(t==='NT')return{k:'none',nc,ann:0};if(t==='0T')return{k:'band',A:0,ann:0,nc};
+ if(m=/^K(\d{1,5})$/.exec(t))return{k:'band',A:-(+m[1]*10+9),ann:-(+m[1]*10),K:true,nc};
+ if(m=/^(\d{1,5})[LMNT]?$/.exec(t))return{k:'band',A:+m[1]*10+9,ann:+m[1]*10,nc};return null}
+function allowance(code){const p=parseCode(code);return p&&p.k==='band'?p.A:null}
+const codeOk=c=>parseCode(c)!==null;
+const codeNote=c=>{const p=parseCode(c);if(!p)return'';if(p.k==='none')return'no tax';if(p.k==='flat')return p.r+'% on everything';if(p.K)return'K code: adds to taxable pay';return p.nc?'month 1 basis':''};
 function lastCode(pm){const ks=Object.keys(S.actuals).filter(k=>k<pm&&S.actuals[k].code).sort();return ks.length?S.actuals[ks[ks.length-1]].code:codeFor(tyOf(pm),tmOf(pm))}
-function knownCodes(){const s=new Set([...(S.codes||[]),S.set.taxCode]);for(const a of Object.values(S.actuals))if(a.code)s.add(a.code);return[...s].filter(c=>allowance(c)!==null).sort()}
-function codeFor(ty,tm){let best=null,first=null;for(let k=1;k<=12;k++){const c=(S.actuals[pmAt(ty,k)]||{}).code;if(c&&allowance(c)!==null){if(!first)first=c;if(k<=tm)best=c}}return best||first||S.set.taxCode}
+function knownCodes(){const s=new Set([...(S.codes||[]),S.set.taxCode]);for(const a of Object.values(S.actuals))if(a.code)s.add(a.code);return[...s].filter(codeOk).sort()}
+function codeFor(ty,tm){let best=null,first=null;for(let k=1;k<=12;k++){const c=(S.actuals[pmAt(ty,k)]||{}).code;if(c&&codeOk(c)){if(!first)first=c;if(k<=tm)best=c}}return best||first||S.set.taxCode}
 /* cumulative PAYE: tax due to date in pennies, taxable pay rounded down to whole pounds */
-function taxDue(ytdP,tm,ty){const c=cfg(ty),A=allowance(codeFor(ty,tm))??12579;
+function taxDue(ytdP,tm,ty,code){const c=cfg(ty),A=allowance(code??codeFor(ty,tm))??12579;
  const tx=Math.max(0,Math.floor((12*ytdP-A*100*tm)/1200));
  const band=+c.band*tm/12,top=Math.max(band,(+c.addl-12570)*tm/12);
  const b1=Math.min(tx,band),b2=Math.max(0,Math.min(tx,top)-band),b3=Math.max(0,tx-top);
  return Math.round(b1*20+b2*40+b3*45)}
 function niFor(gP,ty){const c=cfg(ty),pt=P(c.pt),uel=P(c.uel);const a=Math.max(0,Math.min(gP,uel)-pt),b=Math.max(0,gP-uel);return divHU(a*fixed(c.ni1,2)+b*fixed(c.ni2,2),10000)}
 const memo=new Map();
+const bkLast=()=>(S.bk&&S.bk.last)||0;
+const bkDue=()=>!cloud&&(Object.keys(S.actuals).length||Object.keys(S.days).length)&&Date.now()-bkLast()>30*864e5&&Date.now()>((S.bk&&S.bk.snooze)||0);
+function markBk(){S.bk=Object.assign({},S.bk,{last:Date.now()});save();render()}
 const hasAct=p=>{const a=S.actuals[p];return a&&!isNaN(P(a.ytdG))&&!isNaN(P(a.ytdT))};
 function ytdOf(p){if(hasAct(p))return{G:P(S.actuals[p].ytdG),T:P(S.actuals[p].ytdT),miss:[]};const c=calc(p);return{G:c.ytdG,T:c.ytdT,miss:c.miss}}
 function calc(pm){if(memo.has(pm))return memo.get(pm);
  const s=slip(pm),ty=tyOf(pm),tm=tmOf(pm);
  const prev=tm>1?ytdOf(pmAt(ty,tm-1)):{G:0,T:0,miss:[]};
  const miss=[...prev.miss];if(tm>1){const pp=pmAt(ty,tm-1);if(!hasAct(pp)&&pp<todayISO().slice(0,7))miss.push(pp)}
- const G=prev.G+s.gross,due=taxDue(G,tm,ty),tax=due-prev.T,ni=niFor(s.gross,ty);
- const r={...s,ty,tm,tax,ni,net:s.gross-tax-ni+s.atSum,ytdG:G,ytdT:due,miss};memo.set(pm,r);return r}
+ const G=prev.G+s.gross,code=codeFor(ty,tm),pc=parseCode(code)||parseCode('1257L'),ni=niFor(s.gross,ty);let tax;
+ if(pc.k==='none')tax=0;
+ else if(pc.k==='flat')tax=Math.max(0,Math.floor(s.gross/100))*pc.r;
+ else if(pc.nc)tax=s.gross>0?taxDue(s.gross,1,ty,code):0;
+ else tax=taxDue(G,tm,ty,code)-prev.T;
+ if(pc.K)tax=Math.min(tax,Math.floor(Math.max(0,s.gross)/2));
+ const due=prev.T+tax,r={...s,ty,tm,tax,ni,code,net:s.gross-tax-ni+s.atSum,ytdG:G,ytdT:due,miss};memo.set(pm,r);return r}
 
 /* ================= leave ================= */
 const lyStart=y=>y+'-'+pad(S.set.lyM)+'-'+pad(S.set.lyD);
@@ -376,16 +396,16 @@ function vPay(){const L=payList(),np=nextPm(),pm=payPm&&L.includes(payPm)?payPm:
  const lines=c.L.map(x=>`<div class="ln"><span>${esc(x.l==='Monthly Pay'?'Salary':x.l==='1/6 Shift'?'Shift allowance':x.k==='ot'?otName(x):x.l)}${x.est?' <span class="tag">estimate</span>':''}${x.m!=null?`<span class="s">${hrs(x.m)} × £${esc(x.rate)}</span>`:''}</span><span class="r${x.p<0?' neg':''}">${money(x.p)}</span></div>`).join('');
  return`<div class="top c"><button class="circ" data-a="payGo" data-v="${L[i-1]||''}" aria-label="Previous month"${i>0?'':' disabled'}>‹</button><div class="t"><div class="sub">${isNext?'Next pay':pm<np?'Paid':'Coming up'}</div><h1>${pmName(pm)}</h1><div class="sub">${esc(payLbl(b))}</div></div><button class="circ" data-a="payGo" data-v="${L[i+1]||''}" aria-label="Next month"${i<L.length-1?'':' disabled'}>›</button></div>
  <div class="card hero"><div class="lab">Take-home pay · ${act?'from your payslip':'estimate'}</div><div class="big">${money(NET)}</div>${b?`<div class="lab">For work ${fd(b.start)} – ${fd(b.end)}${b.draft?' (estimated dates)':''}</div>`:''}</div>
- ${tiles}${!isNext?`<button class="btn link" data-a="payGo" data-v="${np}">Back to next pay</button>`:''}
+ ${tiles}${isNext&&bkDue()?`<div class="card"><h2>Save a backup</h2><p class="sub" style="margin:4px 0 12px">${bkLast()?'Your last backup was '+Math.floor((Date.now()-bkLast())/864e5)+' days ago.':'You haven\'t saved a backup yet.'} Your data only lives on this phone.</p><div class="btns" style="margin:0"><button class="btn pri" data-a="saveBk">Save backup</button><button class="btn" data-a="bkLater">Later</button></div></div>`:''}${!isNext?`<button class="btn link" data-a="payGo" data-v="${np}">Back to next pay</button>`:''}
  ${c.miss.length&&!act?`<p class="hint">Add your ${c.miss.map(p=>pmName(p,true).split(' ')[0]).join(', ')} payslip so the tax here is exact.</p>`:''}
  ${!showDet?'<button class="btn blk" data-a="det">Show payslip details</button>':`<button class="btn link blk" data-a="det">Hide payslip details</button>${hist?`<div class="card">${b?(()=>{const bs=(c.L.find(x=>x.k==='base')||{p:0}).p,pr=c.L.filter(x=>x.k==='prem'),prs=pr.reduce((q,x)=>q+x.p,0),sac=P(a.sac)>0?P(a.sac):0,tot=!isNaN(P(a.total))?P(a.total):P(a.gross)+sac,oth=tot-bs-prs;
   return`<div class="sec" style="margin-top:0">PAY</div><div class="ln"><span>Salary</span><span class="r">${money(bs)}</span></div>${pr.map(x=>`<div class="ln"><span>Shift allowance<span class="s">${hrs(x.m)} × £${esc(x.rate)}</span></span><span class="r">${money(x.p)}</span></div>`).join('')}
   <div class="ln"><span>Overtime and other pay<span class="s">Overtime, Holiday Cal, bonuses, minus bought holidays</span></span><span class="r${oth<0?' neg':''}">${money(oth)}</span></div>${sac?`<div class="ln"><span>Total payments</span><span class="r">${money(tot)}</span></div><div class="ln"><span>${esc(a.sacL||'Cycle to work')}<span class="s">taken before tax</span></span><span class="r neg">−${money(sac)}</span></div>`:''}<div class="ln tot"><span>${sac?'Taxable pay':'Gross'}</span><span class="r">${money(P(a.gross))}</span></div><div class="sec">DEDUCTIONS</div>`})():''}<div class="ln"${b?' hidden':''}><span>Gross</span><span class="r">${money(P(a.gross))}</span></div><div class="ln"><span>Tax</span><span class="r neg">−${money(P(a.tax))}</span></div><div class="ln"><span>National Insurance</span><span class="r neg">−${money(P(a.ni))}</span></div><div class="ln tot"><span>Take-home</span><span class="r">${money(P(a.net))}</span></div></div>`
  :`<div class="card"><div class="sec" style="margin-top:0">PAY</div>${lines}<div class="ln tot"><span>Gross</span><span class="r">${money(c.gross)}</span></div>
-  <div class="sec">DEDUCTIONS</div>${c.tax<0?`<div class="ln"><span>Tax refund<span class="s">overpaid earlier this tax year</span></span><span class="r">+${money(-c.tax)}</span></div>`:`<div class="ln"><span>Tax</span><span class="r neg">−${money(c.tax)}</span></div>`}<div class="ln"><span>National Insurance</span><span class="r neg">−${money(c.ni)}</span></div>${c.AT.map(x=>`<div class="ln"><span>${esc(x.l)}<span class="s">after tax</span></span><span class="r neg">${money(x.p)}</span></div>`).join('')}
+  <div class="sec">DEDUCTIONS</div>${c.tax<0?`<div class="ln"><span>Tax refund<span class="s">overpaid earlier this tax year</span></span><span class="r">+${money(-c.tax)}</span></div>`:`<div class="ln"><span>Tax<span class="s">${esc(c.code)}${codeNote(c.code)?' · '+codeNote(c.code):''}</span></span><span class="r neg">−${money(c.tax)}</span></div>`}<div class="ln"><span>National Insurance</span><span class="r neg">−${money(c.ni)}</span></div>${c.AT.map(x=>`<div class="ln"><span>${esc(x.l)}<span class="s">after tax</span></span><span class="r neg">${money(x.p)}</span></div>`).join('')}
   <div class="ln tot"><span>Take-home</span><span class="r">${money(c.net)}</span></div>
   ${act?`<p class="sub" style="margin:8px 0 0">${Math.abs(P(a.net)-c.net)<=1?'✓ Matches your payslip.':`Your payslip says ${money(P(a.net))}, ${money(Math.abs(P(a.net)-c.net))} ${P(a.net)>c.net?'more':'less'} than this estimate.`}</p>`:''}</div>`}`}
- ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.10 · 25 Nov 2026</p>`}
+ ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.12 · 25 Nov 2026</p>`}
 const CATL={b15:'×1.5',b2:'×2',s15:'×1.5 + shift',s2:'×2 + shift'};
 function otSum(from,to){const g={},days=[];for(let d=from;d<=to;d=add(d,1)){const o=otInfo(d);if(o){days.push([d,o]);const x=g[o.cat]=g[o.cat]||{m:0,p:0};x.m+=o.m;x.p+=o.pay}}
  const rows=CORD.filter(k=>g[k]).map(k=>({k,m:g[k].m,p:Math.round(g[k].p)}));return{rows,days,m:rows.reduce((a,x)=>a+x.m,0),p:rows.reduce((a,x)=>a+x.p,0)}}
@@ -402,7 +422,7 @@ function yearCard(ty){const t=todayISO();let last=null;
  const so=last?ytdAll(last):null;
  return`${so?`<div class="card"><div class="sub" style="margin-bottom:6px">So far · April to ${pmName(last,true).split(' ')[0]}${so.est?' (some months estimated)':' (from your payslips)'}</div>${rows(so)}</div>`:''}
  <div class="card"><div class="sub" style="margin-bottom:6px">Whole year estimate · April to March</div><div class="sub" style="margin:-4px 0 6px">Future months only include overtime you have logged.</div>${rows(Y)}</div>`}
-function annualTax(Gp,ty){const c=cfg(ty),A=(allowance(codeFor(ty,12))??12579)-9,tx=Math.max(0,Math.floor((Gp-A*100)/100)),band=+c.band,top=Math.max(band,+c.addl-12570);
+function annualTax(Gp,ty){const c=cfg(ty),pc=parseCode(codeFor(ty,12))||parseCode('1257L');if(pc.k==='none')return{tx:0,A:0,due:0};if(pc.k==='flat'){const tx=Math.max(0,Math.floor(Gp/100));return{tx,A:0,due:tx*pc.r}}const A=pc.ann,tx=Math.max(0,Math.floor((Gp-A*100)/100)),band=+c.band,top=Math.max(band,+c.addl-12570);
  const b1=Math.min(tx,band),b2=Math.max(0,Math.min(tx,top)-band),b3=Math.max(0,tx-top);return{tx,A,due:Math.round(b1*20+b2*40+b3*45)}}
 function vTax(){const ty=taxY,cur0=tyOf(nextPm()),hasAny=Array.from({length:12},(_,k)=>pmAt(ty,k+1)).some(p=>S.actuals[p]||blockPm(p));
  if(!hasAny)return`<div class="top c"><button class="circ" data-a="taxGo" data-v="-1" aria-label="Previous tax year"${ty>2023?'':' disabled'}>‹</button><div class="t"><div class="sub">Tax year</div><h1>${ty}/${String(ty+1).slice(2)}</h1><div class="sub">6 Apr ${ty} – 5 Apr ${ty+1}</div></div><button class="circ" data-a="taxGo" data-v="1" aria-label="Next tax year">›</button></div>
@@ -413,8 +433,10 @@ function vTax(){const ty=taxY,cur0=tyOf(nextPm()),hasAny=Array.from({length:12},
  <div class="card hero"><div class="lab">At the end of the tax year</div><div class="big">${ok?'≈ £0':money(Math.abs(diff))}</div>
   <div>${ok?'Your tax should be about right. Nothing to pay back, nothing to claim.':diff>0?'HMRC should owe you this.':'You may owe HMRC this.'}</div>
   <div class="trio"><div><small>You should pay</small><b>${money(due)}</b></div><div><small>You'll have paid</small><b>${money(Y.T)}</b></div><div><small>${ok?'Difference':diff>0?'Paid too much':'Paid too little'}</small><b>${money(Math.abs(diff))}</b></div></div>
-  <div class="lab" style="margin-top:10px">Tax for the whole year (April to March), worked out automatically from your payslips${Y.est?' and the months still to come':''}.</div></div>
+  <div class="lab" style="margin-top:10px">Tax for the whole year (April to March), worked out automatically from your payslips${Y.est&&pmAt(ty,12)>=todayISO().slice(0,7)?' and the months still to come':''}.</div></div>
  ${yearTable(ty)}
+ <button class="btn blk" data-a="shYsum">Year summary</button>
+ ${Array.from({length:12},(_,k)=>(S.actuals[pmAt(ty,k+1)]||{}).code).some(c=>{const p=c&&parseCode(c);return p&&(p.nc||p.k!=='band')})?`<div class="card"><div class="ln"><span>Some months this year were on an emergency or flat-rate tax code (like 1257L M1, BR or 0T). Those months aren't balanced out automatically, so HMRC settles the difference after the year ends. If you had another job that year, it isn't counted here.</span></div></div>`:''}
  <div class="lbl">Good to know</div>
  <div class="card"><div class="ln"><span>National Insurance is settled every month. There's nothing to get back.</span></div>
   <div class="ln"><span>Only your Almac pay is counted, not savings interest or investments.</span></div>
@@ -454,7 +476,7 @@ function vLeave(){const B=bal(lyY),t=todayISO(),G=groups(B.days),fut=G.filter(g=
 function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,b)=>a.payFrom<b.payFrom?1:-1);
  const ok=FIX.length>0&&FIX.every(f=>{let g=0;for(const x of f.L)g+=Array.isArray(x)?lineAmt(x[0],x[1]):P(x);const t=taxDue(P(f.pg)+g,f.m,2026)-P(f.pt),n=niFor(g,2026);return g===P(f.g)&&t===P(f.t)&&n===P(f.n)});
  const yb=sortedBlocks().filter(b=>+b.pm.slice(0,4)===blkY),ys=[...new Set(S.blocks.map(b=>+b.pm.slice(0,4)))].sort();
- return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.10 · 25 Nov 2026</div></div></div>
+ return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.12 · 25 Nov 2026</div></div></div>
  <div class="lbl">Salary</div>
  <div class="card"><div class="big" style="font-size:40px;margin-top:0">${money(P(cur.base))}<span class="sub" style="font-size:16px;letter-spacing:0;font-weight:600"> /month</span></div>
   <div class="sub">£${hourly(cur).toFixed(2)} an hour${ok?' · ✓ matches your last 6 payslips':''}</div>
@@ -469,8 +491,8 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  <div class="lbl">Tax code</div>
  <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
  <div class="lbl">Backup</div>
- <div class="card"><div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div><button class="btn blk" style="margin-top:10px" data-a="shAddSlips">Add payslips from a file</button></div>
- <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.10 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
+ <div class="card"><button class="btn pri blk" data-a="saveBk">Save backup file</button><p class="sub" style="margin:8px 0 12px;text-align:center">${bkLast()?'Last backup '+fd(new Date(bkLast()).toISOString().slice(0,10),{year:'numeric'}):'No backup saved yet'} · save it to Files or iCloud Drive</p><div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div><button class="btn blk" style="margin-top:10px" data-a="shAddSlips">Add payslips from a file</button></div>
+ <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.12 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
  <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
 
 /* ================= sheets ================= */
@@ -555,8 +577,24 @@ const SHEETS={
   <div class="mcal">${['M','T','W','T','F','S','S'].map(x=>`<div class="dh">${x}</div>`).join('')}${g}</div>
   <p class="${days%7||e<s?'neg':'sub'}" style="margin:0 0 12px">Tap the ${SH.mode==='end'?'last day of this block':'payday'}. ${e<s?'The last day must be after the start.':`${fd(s)} – ${fd(e)} · ${wk({start:s,end:e})}`}</p>
   <button class="btn pri blk" data-a="saveBlock">Save</button>`},
- addslips:()=>head('Add payslips','Paste the payslip file Claude made for you')+`<textarea id="ps" placeholder="Paste here"></textarea><p class="sub" style="margin-top:8px">Only payslips are added. Your allowance, rota and settings stay as they are. A month you already have is replaced by the one in the file.</p><button class="btn pri blk" data-a="addSlips">Add payslips</button>`,
- restore:()=>head('Restore backup','This replaces everything in the app')+`<textarea id="bk" placeholder="Paste your backup here"></textarea><button class="btn pri blk" style="margin-top:12px" data-a="import">${SH.sure?'Tap again to replace all data':'Restore'}</button>`
+ addslips:()=>head('Add payslips','Paste the payslip file Claude made for you')+`<label class="btn blk" style="margin-bottom:10px">Choose file<input type="file" accept=".json,.txt,application/json,text/plain" data-f="ps" style="display:none"></label><textarea id="ps" placeholder="…or paste here"></textarea><p class="sub" style="margin-top:8px">Only payslips are added. Your allowance, rota and settings stay as they are. A month you already have is replaced by the one in the file.</p><button class="btn pri blk" data-a="addSlips">Add payslips</button>`,
+ ysum:()=>{const ty=SH.ty,t=todayISO(),ms=[];
+  for(let k=1;k<=12;k++){const p=pmAt(ty,k),b=blockPm(p);if((b&&payOf(b)<=t)||(S.actuals[p]&&payOf(b||{pm:p})<=t))ms.push(p)}
+  const ttl=`Year summary ${ty}/${String(ty+1).slice(2)}`;
+  if(!ms.length)return head(ttl,'April to March')+'<p class="sub">Nothing paid yet this tax year.</p>';
+  const last=ms[ms.length-1],Y=ytdAll(last),nA=ms.filter(p=>src(p)==='act').length;
+  const nets=ms.map(p=>({p,v:src(p)==='act'?P(S.actuals[p].net):calc(p).net}));
+  const hi=nets.reduce((a,x)=>x.v>a.v?x:a),lo=nets.reduce((a,x)=>x.v<a.v?x:a);
+  let sac=0,om=0,op=0;for(const p of ms){const a=S.actuals[p];if(a&&!isNaN(P(a.sac)))sac+=P(a.sac);for(const x of calc(p).L)if(x.k==='ot'){om+=x.m;op+=x.p}}
+  const d0=ty+'-04-06',d1=[(ty+1)+'-04-05',t].sort()[0];let hd=0;for(const[d,x]of Object.entries(S.days))if(d>=d0&&d<=d1)hd+=lvFrac(x);
+  const codes=[...new Set(ms.map(p=>(S.actuals[p]||{}).code).filter(Boolean))];
+  const R=[['Gross pay',money(Y.G)],sac?['Taken before tax (cycle to work, PTO…)',money(sac)]:null,['Tax',money(Y.T)],['National Insurance',money(Y.N)],['Take-home',money(Y.NET),1],
+   ['Average take-home a month',money(Math.round(Y.NET/ms.length))],['Best month',`${pmName(hi.p,true)} · ${money(hi.v)}`],['Lowest month',`${pmName(lo.p,true)} · ${money(lo.v)}`],
+   om?['Overtime logged in the app',`${hrs(om)} · ${money(Math.round(op))}`]:null,hd?['Holidays taken',`${dd(hd)} day${hd===1?'':'s'}`]:null,codes.length?['Tax code'+(codes.length>1?'s':''),codes.join(', ')]:null].filter(Boolean);
+  const per=`April to ${pmName(last,true).split(' ')[0]} · ${ms.length} payslip${ms.length===1?'':'s'}${nA<ms.length?` (${ms.length-nA} estimated)`:''}`;
+  SH.txt=[ttl,per,...R.map(x=>x[0]+': '+x[1])].join('\n');
+  return head(ttl,per)+`<div class="card">${R.map(x=>`<div class="ln${x[2]?' tot':''}"><span>${esc(x[0])}</span><span class="r">${esc(x[1])}</span></div>`).join('')}</div><button class="btn pri blk" data-a="copyYsum">Copy summary</button>`},
+ restore:()=>head('Restore backup','This replaces everything in the app')+`<label class="btn blk" style="margin-bottom:10px">Choose file<input type="file" accept=".json,.txt,application/json,text/plain" data-f="bk" style="display:none"></label><textarea id="bk" placeholder="…or paste your backup here"></textarea><button class="btn pri blk" style="margin-top:12px" data-a="import">${SH.sure?'Tap again to replace all data':'Restore'}</button>`
 };
 const riseHTML=(h,s,m)=>{const nb=blockPm(addM(m,1));return`<b>£${h.toFixed(2)}/h</b><div class="sub">Overtime ×1.5 £${(h*1.5).toFixed(2)} · ×2 £${(h*2).toFixed(2)}<br>With shift ×1.5 £${((h+s)*1.5).toFixed(2)} · ×2 £${((h+s)*2).toFixed(2)}<br>New overtime rates for work from ${nb?fd(nb.start,{year:'numeric'}):pmName(m)}</div>`};
 function actCheck(){const g=P(val('aG')),sc=P(val('aS'))||0,n=P(val('aN')),t=P(val('aT')),ni=P(val('aI'));if(isNaN(g))return'<span class="sub">Type the numbers and the app checks them.</span>';
@@ -567,6 +605,7 @@ function onSheetIn(e){const t=e.target;
  if(t.id==='prB'||t.id==='prM'){SH.b=val('prB');SH.m=val('prM');const b=P(SH.b),h=b>0?b*12/1950/100:0;document.getElementById('rpv').innerHTML=h?riseHTML(h,h/6,SH.m):'<span class="sub">Type the salary to see the new rates.</span>'}
  if(['aG','aS','aN','aT','aI'].includes(t.id)){const e=document.getElementById('apv');if(e)e.innerHTML=actCheck()}
  if(t.id==='dMul'||t.id==='dCat'){SH.mul=val('dMul');SH.cat=val('dCat');document.getElementById('pv').innerHTML=pvHTML()}}
+document.addEventListener('change',e=>{const t=e.target;if(!t||!t.dataset||!t.dataset.f||!t.files||!t.files[0])return;t.files[0].text().then(x=>{const el=document.getElementById(t.dataset.f);if(el){el.value=x;flash('File loaded')}}).catch(()=>flash('Could not read that file'))});
 sheet.addEventListener('input',onSheetIn);sheet.addEventListener('change',onSheetIn);
 ov.addEventListener('click',e=>{if(e.target===ov)closeSheet()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&SH)closeSheet()});
@@ -603,7 +642,7 @@ const A={
  dSave:()=>{saveDay();closeSheet();render();flash('Saved')},
  shPayslip:()=>openSheet({type:'payslip',pm:payPm||nextPm()}),
  saveAct:()=>{const tot=val('aG'),sc=val('aS'),cd=val('aC').toUpperCase();if(sc!==''&&isNaN(P(sc))||tot!==''&&isNaN(P(tot))){flash('Check the numbers, e.g. 1234.56');return}
-  if(cd&&allowance(cd)===null){flash('Tax code should look like 1257L');return}
+  if(cd&&!codeOk(cd)){flash('That tax code isn\'t recognised. Try 1257L, BR, 0T, K475 or 1257L M1');return}
   if(cd){S.codes=[...new Set([...(S.codes||[]),cd])]}
   const sv=P(sc)>0?P(sc):0,gross=tot===''?'':((P(tot)-sv)/100).toFixed(2);
   const r={gross,total:tot,sac:sv?(sv/100).toFixed(2):'',code:cd,net:val('aN'),tax:val('aT'),ni:val('aI'),ytdG:val('aYG'),ytdT:val('aYT'),ytdN:val('aYN'),ytdNet:val('aYP')};
@@ -648,7 +687,13 @@ const A={
  saveBlock:()=>{const b=blockPm(SH.pm);if(SH.end<b.start){flash('The last day must be after the start');return}
   b.end=SH.end;b.pay=SH.pay;b.draft=false;relink();ensureBlocks();save();closeSheet();render();flash(`${pmName(b.pm).split(' ')[0]} pay block saved`)},
  setShift:t=>{S.set.anchor=iso(monT(todayISO()));S.set.anchorShift=t.dataset.v;save();render();flash('Rota updated')},
- copyBk:async()=>{const j=JSON.stringify(S);try{await navigator.clipboard.writeText(j);flash('Backup copied. Paste it in your notes.')}catch(e){openSheet({type:'restore'});const b=document.getElementById('bk');b.value=j;b.select();flash('Select all and copy this text')}},
+ saveBk:async()=>{const j=JSON.stringify(S),name='worktrack-backup-'+todayISO()+'.json';
+  try{const f=new File([j],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});markBk();flash('Backup saved');return}}catch(e){if(e&&e.name==='AbortError')return}
+  try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([j],{type:'application/json'}));a.download=name;document.body.appendChild(a);a.click();a.remove();markBk();flash('Backup saved')}catch(e){flash('Could not save. Use Copy backup instead.')}},
+ shYsum:()=>openSheet({type:'ysum',ty:taxY}),
+ copyYsum:async()=>{try{await navigator.clipboard.writeText(SH.txt);flash('Summary copied')}catch(e){flash('Could not copy')}},
+ bkLater:()=>{S.bk=Object.assign({},S.bk,{snooze:Date.now()+7*864e5});save();render()},
+ copyBk:async()=>{const j=JSON.stringify(S);try{await navigator.clipboard.writeText(j);markBk();flash('Backup copied. Paste it in your notes.')}catch(e){openSheet({type:'restore'});const b=document.getElementById('bk');b.value=j;b.select();flash('Select all and copy this text')}},
  shAddSlips:()=>openSheet({type:'addslips'}),
  addSlips:()=>{let o;try{o=JSON.parse(val('ps'))}catch(e){flash("That isn't a valid payslip file");return}
   if(o&&o.v===1&&o.set&&o.rates){S=normalize(o);ensureBlocks();save();closeSheet();tab='home';render();flash('Backup restored');return}
@@ -667,7 +712,7 @@ const A={
 };
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||!A[t.dataset.a])return;if(t.dataset.a!=='reset'&&confirmReset){confirmReset=false}A[t.dataset.a](t,e)});
 document.querySelector('nav.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;if(tab==='home')payPm=null;confirmReset=false;render();scrollTo(0,0)});
-app.addEventListener('change',e=>{const t=e.target;if(t.dataset.bind==='set.taxCode'){const v=t.value.trim().toUpperCase();if(!/^\d{1,5}L$/.test(v)){flash('Use a code like 1257L');render();return}S.set.taxCode=v;save();render();flash('Tax code saved')}});
+app.addEventListener('change',e=>{const t=e.target;if(t.dataset.bind==='set.taxCode'){const v=t.value.trim().toUpperCase();if(!codeOk(v)){flash('That tax code isn\'t recognised. Try 1257L, BR, 0T or K475');render();return}S.set.taxCode=v;save();render();flash('Tax code saved')}});
 
 {let sx=0,sy=0,on=false;
  app.addEventListener('touchstart',e=>{if(SH||e.touches.length>1)return;const T=e.touches[0];sx=T.clientX;sy=T.clientY;on=!e.target.closest('.bars,input,textarea,select,.scroll')},{passive:true});
@@ -677,8 +722,9 @@ app.addEventListener('change',e=>{const t=e.target;if(t.dataset.bind==='set.taxC
   else if(tab==='leave'){lyY+=dir;render()}
   else if(tab==='tax'){const nt=taxY+dir;if(nt>=2023&&nt<=tyOf(nextPm())+1){taxY=nt;chSel={net:null,ot:null};render()}}},{passive:true})}
 function vWelcome(){return`<div class="top"><div class="t"><h1>WorkTrack</h1><div class="sub">Your pay, overtime and holidays</div></div></div>
- <div class="card"><h2>Bring your data across</h2><p class="sub" style="margin:6px 0 12px">1. In the Claude version, go to Setup → Copy backup.<br>2. Paste it here and tap Restore.</p>
- <textarea id="wbk" placeholder="Paste your backup here"></textarea><button class="btn pri blk" style="margin-top:12px" data-a="wImport">Restore</button></div>
+ <div class="card"><h2>Bring your data across</h2><p class="sub" style="margin:6px 0 12px">Choose your backup file, or paste the backup text, then tap Restore.</p>
+ <label class="btn blk" style="margin-bottom:10px">Choose file<input type="file" accept=".json,.txt,application/json,text/plain" data-f="wbk" style="display:none"></label>
+ <textarea id="wbk" placeholder="…or paste your backup here"></textarea><button class="btn pri blk" style="margin-top:12px" data-a="wImport">Restore</button></div>
  <button class="btn link blk" data-a="shRise">Start fresh with my salary instead</button>
  <p class="foot">Your data stays on this phone. Copy a backup now and then from Setup.</p>`}
 function render(){memo.clear();
