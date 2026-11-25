@@ -89,6 +89,11 @@ h2{font-size:17px;margin:0;font-weight:700}
 .go{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .go .v{font-size:22px;font-weight:800}
 .chev{font-size:22px;color:var(--mute)}
+.opts{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;width:100%;padding:12px 14px;border-radius:14px;border:2px solid var(--line);background:none;color:var(--ink);font:inherit}
+.opt b{display:block;font-size:16px}.opt .s{display:block;color:var(--mute);font-size:14px;margin-top:2px}
+.opt .oi{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--line);font-weight:800;font-size:18px;margin:0!important}
+.opt.on{border-color:var(--acc);background:var(--accSoft)}.opt.on .oi{background:var(--acc);color:var(--accInk)}
 .bk{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 0;color:var(--ink);font:inherit}
 .bk .r1{display:flex;align-items:center;gap:8px}.bk .r1 b{font-size:17px;font-weight:700}.bk .pd{margin-left:auto;font-weight:700;white-space:nowrap}
 .bk .r2{display:flex;align-items:center;gap:12px;margin-top:8px;color:var(--mute);font-size:14px;line-height:16px}
@@ -412,7 +417,7 @@ function vPay(){const L=payList(),np=nextPm(),pm=payPm&&L.includes(payPm)?payPm:
   <div class="sec">DEDUCTIONS</div>${c.tax<0?`<div class="ln"><span>Tax refund<span class="s">overpaid earlier this tax year</span></span><span class="r">+${money(-c.tax)}</span></div>`:`<div class="ln"><span>Tax<span class="s">${esc(c.code)}${codeNote(c.code)?' · '+codeNote(c.code):''}</span></span><span class="r neg">−${money(c.tax)}</span></div>`}<div class="ln"><span>National Insurance</span><span class="r neg">−${money(c.ni)}</span></div>${c.AT.map(x=>`<div class="ln"><span>${esc(x.l)}<span class="s">after tax</span></span><span class="r neg">${money(x.p)}</span></div>`).join('')}
   <div class="ln tot"><span>Take-home</span><span class="r">${money(c.net)}</span></div>
   ${act?`<p class="sub" style="margin:8px 0 0">${Math.abs(P(a.net)-c.net)<=1?'✓ Matches your payslip.':`Your payslip says ${money(P(a.net))}, ${money(Math.abs(P(a.net)-c.net))} ${P(a.net)>c.net?'more':'less'} than this estimate.`}</p>`:''}</div>`}`}
- ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.23 · 25 Nov 2026</p>`}
+ ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.24 · 25 Nov 2026</p>`}
 const CATL={b15:'×1.5',b2:'×2',s15:'×1.5 + shift',s2:'×2 + shift'};
 function otSum(from,to){const g={},days=[];for(let d=from;d<=to;d=add(d,1)){const o=otInfo(d);if(o){days.push([d,o]);const x=g[o.cat]=g[o.cat]||{m:0,p:0};x.m+=o.m;x.p+=o.pay}}
  const rows=CORD.filter(k=>g[k]).map(k=>({k,m:g[k].m,p:Math.round(g[k].p)}));return{rows,days,m:rows.reduce((a,x)=>a+x.m,0),p:rows.reduce((a,x)=>a+x.p,0)}}
@@ -484,7 +489,7 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  const ok=FIX.length>0&&FIX.every(f=>{let g=0;for(const x of f.L)g+=Array.isArray(x)?lineAmt(x[0],x[1]):P(x);const t=taxDue(P(f.pg)+g,f.m,2026)-P(f.pt),n=niFor(g,2026);return g===P(f.g)&&t===P(f.t)&&n===P(f.n)});
  if(!blkSet){const t=todayISO(),cb=sortedBlocks().find(b=>payOf(b)>t);if(cb)blkY=+cb.pm.slice(0,4)}
  const yb=sortedBlocks().filter(b=>+b.pm.slice(0,4)===blkY),ys=[...new Set(S.blocks.map(b=>+b.pm.slice(0,4)))].sort();
- return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.23 · 25 Nov 2026</div></div></div>
+ return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.24 · 25 Nov 2026</div></div></div>
  <div class="lbl">Salary</div>
  <div class="card"><div class="big" style="font-size:40px;margin-top:0">${money(P(cur.base))}<span class="sub" style="font-size:16px;letter-spacing:0;font-weight:600"> /month</span></div>
   <div class="sub">£${hourly(cur).toFixed(2)} an hour${ok?' · ✓ matches your last 6 payslips':''}</div>
@@ -503,7 +508,7 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
  <div class="lbl">Backup</div>
  <div class="card">${window.claude?'':`<button class="btn pri blk" data-a="saveBk">Save backup file</button><p class="sub" style="margin:8px 0 12px;text-align:center">${bkLast()?'Last backup '+fd(new Date(bkLast()).toISOString().slice(0,10),{year:'numeric'}):'No backup saved yet'} · save it to Files or iCloud Drive</p>`}<div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div><button class="btn blk" style="margin-top:10px" data-a="shAddSlips">Add payslips from a file</button></div>
- <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.23 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
+ <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.24 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
  <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
 
 /* ================= sheets ================= */
@@ -555,12 +560,11 @@ const SHEETS={
  extra:()=>{const pm=SH.pm,adj=S.adj[pm]||{};
   return head('Extra pay',pmName(pm))+
   f('Holiday Cal (leave empty and the app works it out)',`<input id="xH" inputmode="decimal" value="${esc(adj.hc??'')}" placeholder="Estimated">`)+
-  `${(adj.lines||[]).map(x=>`<div class="ln"><span>${esc(x.label)}<span class="s">${x.after?'after tax':P(x.amt)<0?'before tax':'pay'}</span></span><span class="r">${money(P(x.amt))} <button class="btn red" data-a="delLine" data-v="${esc(x.id)}">Remove</button></span></div>`).join('')}
+  `${(adj.lines||[]).map(x=>`<div class="ln"><span>${esc(x.label)}<span class="s">${x.after?'taken off after tax':P(x.amt)<0?'taken off before tax':'money added'}</span></span><span class="r">${money(P(x.amt))} <button class="btn red" data-a="delLine" data-v="${esc(x.id)}">Remove</button></span></div>`).join('')}
   <div class="lbl" style="margin-top:12px">Add something</div>
-  <div class="seg">${[['pay','Extra pay'],['pre','Charge before tax'],['post','Charge after tax']].map(([k,l])=>`<button data-a="xK" data-v="${k}" class="${(SH.k||'pay')===k?'on':''}">${l}</button>`).join('')}</div>
+  <div class="opts">${[['pay','+','Money added','Bonus, back pay. Taxed as normal.'],['pre','−','Taken off before tax','Cycle to Work. Your tax and NI go down too.'],['post','−','Taken off after tax','Loans, union fees. Only your take-home goes down.']].map(([k,i,l,d])=>`<button data-a="xK" data-v="${k}" class="opt${(SH.k||'pay')===k?' on':''}"><span class="oi">${i}</span><span><b>${l}</b><span class="s">${d}</span></span></button>`).join('')}</div>
   <div class="two">${f('Name',`<input id="xL" value="${esc(SH.l||'')}" placeholder="${SH.k==='pre'?'Cycle to work':SH.k==='post'?'Union fee':'Bonus'}">`)}${f('Amount £',`<input id="xA" inputmode="decimal" value="${esc(SH.am||'')}" placeholder="${SH.k&&SH.k!=='pay'?'83.33':'150.00'}">`)}</div>
   ${f('Every month for',`<select id="xR">${[1,2,3,4,5,6,9,12,18,24].map(n=>`<option value="${n}">${n===1?'Just this month':n+' months'}</option>`).join('')}</select>`)}
-  <p class="sub">${SH.k==='pre'?'Taken off before tax and NI, like Cycle to Work. Tax and NI go down too.':SH.k==='post'?'Taken off your take-home only. Tax and NI stay the same.':'Added to your pay and taxed as normal.'}</p>
   <button class="btn pri blk" data-a="saveExtra">Save</button>`},
  book:()=>head('Book holiday','Weekends and bank holidays are skipped')+
   `<div class="two">${f('First day',`<input type="date" id="lvF" value="${esc(SH.f||'')}">`)}${f('Last day',`<input type="date" id="lvT" value="${esc(SH.t||'')}">`)}</div>
