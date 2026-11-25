@@ -377,7 +377,7 @@ function vPay(){const L=payList(),np=nextPm(),pm=payPm&&L.includes(payPm)?payPm:
  return`<div class="top c"><button class="circ" data-a="payGo" data-v="${L[i-1]||''}" aria-label="Previous month"${i>0?'':' disabled'}>‹</button><div class="t"><div class="sub">${isNext?'Next pay':pm<np?'Paid':'Coming up'}</div><h1>${pmName(pm)}</h1><div class="sub">${esc(payLbl(b))}</div></div><button class="circ" data-a="payGo" data-v="${L[i+1]||''}" aria-label="Next month"${i<L.length-1?'':' disabled'}>›</button></div>
  <div class="card hero"><div class="lab">Take-home pay · ${act?'from your payslip':'estimate'}</div><div class="big">${money(NET)}</div>${b?`<div class="lab">For work ${fd(b.start)} – ${fd(b.end)}${b.draft?' (estimated dates)':''}</div>`:''}</div>
  ${tiles}${!isNext?`<button class="btn link" data-a="payGo" data-v="${np}">Back to next pay</button>`:''}
- ${c.miss.length?`<p class="hint">Add your ${c.miss.map(p=>pmName(p,true).split(' ')[0]).join(', ')} payslip so the tax here is exact.</p>`:''}
+ ${c.miss.length&&!act?`<p class="hint">Add your ${c.miss.map(p=>pmName(p,true).split(' ')[0]).join(', ')} payslip so the tax here is exact.</p>`:''}
  ${!showDet?'<button class="btn blk" data-a="det">Show payslip details</button>':`<button class="btn link blk" data-a="det">Hide payslip details</button>${hist?`<div class="card">${b?(()=>{const bs=(c.L.find(x=>x.k==='base')||{p:0}).p,pr=c.L.filter(x=>x.k==='prem'),prs=pr.reduce((q,x)=>q+x.p,0),sac=P(a.sac)>0?P(a.sac):0,tot=!isNaN(P(a.total))?P(a.total):P(a.gross)+sac,oth=tot-bs-prs;
   return`<div class="sec" style="margin-top:0">PAY</div><div class="ln"><span>Salary</span><span class="r">${money(bs)}</span></div>${pr.map(x=>`<div class="ln"><span>Shift allowance<span class="s">${hrs(x.m)} × £${esc(x.rate)}</span></span><span class="r">${money(x.p)}</span></div>`).join('')}
   <div class="ln"><span>Overtime and other pay<span class="s">Overtime, Holiday Cal, bonuses, minus bought holidays</span></span><span class="r${oth<0?' neg':''}">${money(oth)}</span></div>${sac?`<div class="ln"><span>Total payments</span><span class="r">${money(tot)}</span></div><div class="ln"><span>${esc(a.sacL||'Cycle to work')}<span class="s">taken before tax</span></span><span class="r neg">−${money(sac)}</span></div>`:''}<div class="ln tot"><span>${sac?'Taxable pay':'Gross'}</span><span class="r">${money(P(a.gross))}</span></div><div class="sec">DEDUCTIONS</div>`})():''}<div class="ln"${b?' hidden':''}><span>Gross</span><span class="r">${money(P(a.gross))}</span></div><div class="ln"><span>Tax</span><span class="r neg">−${money(P(a.tax))}</span></div><div class="ln"><span>National Insurance</span><span class="r neg">−${money(P(a.ni))}</span></div><div class="ln tot"><span>Take-home</span><span class="r">${money(P(a.net))}</span></div></div>`
@@ -385,7 +385,7 @@ function vPay(){const L=payList(),np=nextPm(),pm=payPm&&L.includes(payPm)?payPm:
   <div class="sec">DEDUCTIONS</div><div class="ln"><span>Tax</span><span class="r neg">−${money(c.tax)}</span></div><div class="ln"><span>National Insurance</span><span class="r neg">−${money(c.ni)}</span></div>${c.AT.map(x=>`<div class="ln"><span>${esc(x.l)}<span class="s">after tax</span></span><span class="r neg">${money(x.p)}</span></div>`).join('')}
   <div class="ln tot"><span>Take-home</span><span class="r">${money(c.net)}</span></div>
   ${act?`<p class="sub" style="margin:8px 0 0">${Math.abs(P(a.net)-c.net)<=1?'✓ Matches your payslip.':`Your payslip says ${money(P(a.net))}, ${money(Math.abs(P(a.net)-c.net))} ${P(a.net)>c.net?'more':'less'} than this estimate.`}</p>`:''}</div>`}`}
- ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.8 · 25 Nov 2026</p>`}
+ ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.9 · 25 Nov 2026</p>`}
 const CATL={b15:'×1.5',b2:'×2',s15:'×1.5 + shift',s2:'×2 + shift'};
 function otSum(from,to){const g={},days=[];for(let d=from;d<=to;d=add(d,1)){const o=otInfo(d);if(o){days.push([d,o]);const x=g[o.cat]=g[o.cat]||{m:0,p:0};x.m+=o.m;x.p+=o.pay}}
  const rows=CORD.filter(k=>g[k]).map(k=>({k,m:g[k].m,p:Math.round(g[k].p)}));return{rows,days,m:rows.reduce((a,x)=>a+x.m,0),p:rows.reduce((a,x)=>a+x.p,0)}}
@@ -454,7 +454,7 @@ function vLeave(){const B=bal(lyY),t=todayISO(),G=groups(B.days),fut=G.filter(g=
 function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,b)=>a.payFrom<b.payFrom?1:-1);
  const ok=FIX.length>0&&FIX.every(f=>{let g=0;for(const x of f.L)g+=Array.isArray(x)?lineAmt(x[0],x[1]):P(x);const t=taxDue(P(f.pg)+g,f.m,2026)-P(f.pt),n=niFor(g,2026);return g===P(f.g)&&t===P(f.t)&&n===P(f.n)});
  const yb=sortedBlocks().filter(b=>+b.pm.slice(0,4)===blkY),ys=[...new Set(S.blocks.map(b=>+b.pm.slice(0,4)))].sort();
- return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.8 · 25 Nov 2026</div></div></div>
+ return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.9 · 25 Nov 2026</div></div></div>
  <div class="lbl">Salary</div>
  <div class="card"><div class="big" style="font-size:40px;margin-top:0">${money(P(cur.base))}<span class="sub" style="font-size:16px;letter-spacing:0;font-weight:600"> /month</span></div>
   <div class="sub">£${hourly(cur).toFixed(2)} an hour${ok?' · ✓ matches your last 6 payslips':''}</div>
@@ -469,8 +469,8 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  <div class="lbl">Tax code</div>
  <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
  <div class="lbl">Backup</div>
- <div class="card"><div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div></div>
- <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.8 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
+ <div class="card"><div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div><button class="btn blk" style="margin-top:10px" data-a="shAddSlips">Add payslips from a file</button></div>
+ <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.9 · 25 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
  <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
 
 /* ================= sheets ================= */
@@ -555,6 +555,7 @@ const SHEETS={
   <div class="mcal">${['M','T','W','T','F','S','S'].map(x=>`<div class="dh">${x}</div>`).join('')}${g}</div>
   <p class="${days%7||e<s?'neg':'sub'}" style="margin:0 0 12px">Tap the ${SH.mode==='end'?'last day of this block':'payday'}. ${e<s?'The last day must be after the start.':`${fd(s)} – ${fd(e)} · ${wk({start:s,end:e})}`}</p>
   <button class="btn pri blk" data-a="saveBlock">Save</button>`},
+ addslips:()=>head('Add payslips','Paste the payslip file Claude made for you')+`<textarea id="ps" placeholder="Paste here"></textarea><p class="sub" style="margin-top:8px">Only payslips are added. Your allowance, rota and settings stay as they are. A month you already have is replaced by the one in the file.</p><button class="btn pri blk" data-a="addSlips">Add payslips</button>`,
  restore:()=>head('Restore backup','This replaces everything in the app')+`<textarea id="bk" placeholder="Paste your backup here"></textarea><button class="btn pri blk" style="margin-top:12px" data-a="import">${SH.sure?'Tap again to replace all data':'Restore'}</button>`
 };
 const riseHTML=(h,s,m)=>{const nb=blockPm(addM(m,1));return`<b>£${h.toFixed(2)}/h</b><div class="sub">Overtime ×1.5 £${(h*1.5).toFixed(2)} · ×2 £${(h*2).toFixed(2)}<br>With shift ×1.5 £${((h+s)*1.5).toFixed(2)} · ×2 £${((h+s)*2).toFixed(2)}<br>New overtime rates for work from ${nb?fd(nb.start,{year:'numeric'}):pmName(m)}</div>`};
@@ -648,6 +649,12 @@ const A={
   b.end=SH.end;b.pay=SH.pay;b.draft=false;relink();ensureBlocks();save();closeSheet();render();flash(`${pmName(b.pm).split(' ')[0]} pay block saved`)},
  setShift:t=>{S.set.anchor=iso(monT(todayISO()));S.set.anchorShift=t.dataset.v;save();render();flash('Rota updated')},
  copyBk:async()=>{const j=JSON.stringify(S);try{await navigator.clipboard.writeText(j);flash('Backup copied. Paste it in your notes.')}catch(e){openSheet({type:'restore'});const b=document.getElementById('bk');b.value=j;b.select();flash('Select all and copy this text')}},
+ shAddSlips:()=>openSheet({type:'addslips'}),
+ addSlips:()=>{let o;try{o=JSON.parse(val('ps'))}catch(e){flash("That isn't a valid payslip file");return}
+  const A=o&&(o.payslips||o.actuals);if(!A||typeof A!=='object'){flash("That isn't a WorkTrack payslip file");return}
+  let n=0;for(const[pm,a]of Object.entries(A)){if(!/^\d{4}-\d{2}$/.test(pm)||!a||typeof a!=='object')continue;const rec={};for(const k of['gross','total','sac','sacL','code','net','tax','ni','ytdG','ytdT','ytdN','ytdNet'])if(a[k]!=null&&a[k]!=='')rec[k]=String(a[k]);
+   if(rec.total&&!rec.gross)rec.gross=((P(rec.total)-(P(rec.sac)||0))/100).toFixed(2);if(isNaN(P(rec.net)))continue;S.actuals[pm]=rec;if(rec.code)S.codes=[...new Set([...(S.codes||[]),rec.code])];n++}
+  save();closeSheet();render();flash(n?`Added ${n} payslip${n===1?'':'s'}`:'No payslips found in that file')},
  shRestore:()=>openSheet({type:'restore'}),
  import:()=>{const raw=val('bk');let o;try{o=JSON.parse(raw)}catch(e){flash("That isn't a valid backup");return}
   if(!o||o.v!==1||!o.set){flash("That isn't a WorkTrack backup");return}
