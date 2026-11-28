@@ -89,6 +89,7 @@ h2{font-size:17px;margin:0;font-weight:700}
 .go{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .go .v{font-size:22px;font-weight:800}
 .chev{font-size:22px;color:var(--mute)}
+.lvnm{background:none;border:0;padding:0;margin:0;text-align:left;color:inherit;font:inherit;flex:1;min-width:0}.lvnm b{display:block;font-weight:700}.addnm{color:var(--acc)}
 .opts{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
 .opt{display:flex;align-items:center;gap:12px;text-align:left;width:100%;padding:12px 14px;border-radius:14px;border:2px solid var(--line);background:none;color:var(--ink);font:inherit}
 .opt b{display:block;font-size:16px}.opt .s{display:block;color:var(--mute);font-size:14px;margin-top:2px}
@@ -371,9 +372,9 @@ function bal(y){const L=leaveOf(y),s=lyStart(y),e=add(lyStart(y+1),-1),t=todayIS
  for(const[d,x]of Object.entries(S.days)){if(d<s||d>e)continue;if(isLv(x.st)){const v=lvFrac(x);days.push([d,v,x.st]);if(d<=t)taken+=v;else booked+=v}}
  const total=num(L.ent)+num(L.carry)+bought;
  return{y,s,e,ent:num(L.ent),carry:num(L.carry),bought,total,taken,booked,left:total-taken-booked,days:days.sort((a,b)=>a[0]<b[0]?-1:1),entSet:L.ent!==''&&L.ent!=null}}
-function groups(days){const G=[];for(const x of days){const g=G[G.length-1];if(g&&D(x[0])-D(g.end)<=3*864e5){g.end=x[0];g.n+=x[1];g.ds.push(x[0])}else G.push({start:x[0],end:x[0],n:x[1],ds:[x[0]],half:x[2]==='half'})}return G}
+function groups(days){const G=[];for(const x of days){const g=G[G.length-1],nm=(S.days[x[0]]||{}).nm||'';if(g&&D(x[0])-D(g.end)<=3*864e5&&g.nm===nm){g.end=x[0];g.n+=x[1];g.ds.push(x[0])}else G.push({start:x[0],end:x[0],n:x[1],ds:[x[0]],half:x[2]==='half',nm})}return G}
 function setDay(d,patch){const x=Object.assign({},S.days[d]||{},patch);for(const k of Object.keys(x))if(x[k]==null||x[k]===''||x[k]===0)delete x[k];
- if(x.st===defSt(d))delete x.st;if(x.shift===rotaShift(d))delete x.shift;
+ if(x.st===defSt(d))delete x.st;if(x.shift===rotaShift(d))delete x.shift;if(!isLv(x.st))delete x.nm;
  if(Object.keys(x).length)S.days[d]=x;else delete S.days[d]}
 
 /* ================= blocks: auto-extend and relink ================= */
@@ -429,7 +430,7 @@ function vPay(){const L=payList(),np=nextPm(),pm=payPm&&L.includes(payPm)?payPm:
   <div class="sec">DEDUCTIONS</div>${c.tax<0?`<div class="ln"><span>Tax refund<span class="s">overpaid earlier this tax year</span></span><span class="r">+${money(-c.tax)}</span></div>`:`<div class="ln"><span>Tax<span class="s">${esc(c.code)}${codeNote(c.code)?' · '+codeNote(c.code):''}</span></span><span class="r neg">−${money(c.tax)}</span></div>`}<div class="ln"><span>National Insurance</span><span class="r neg">−${money(c.ni)}</span></div>${c.AT.map(x=>`<div class="ln"><span>${esc(x.l)}<span class="s">after tax</span></span><span class="r neg">${money(x.p)}</span></div>`).join('')}
   <div class="ln tot"><span>Take-home</span><span class="r">${money(c.net)}</span></div>
   ${act?`<p class="sub" style="margin:8px 0 0">${Math.abs(P(a.net)-c.net)<=1?'✓ Matches your payslip.':`Your payslip says ${money(P(a.net))}, ${money(Math.abs(P(a.net)-c.net))} ${P(a.net)>c.net?'more':'less'} than this estimate.`}</p>`:''}</div>`}`}
- ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.26 · 26 Nov 2026</p>`}
+ ${(b&&payOf(b)<=todayISO())||act?`<div class="btns"><button class="btn" data-a="shPayslip">${act?'Edit payslip':'Add payslip'}</button><button class="btn" data-a="shExtra">Extra pay</button></div>`:`<div class="btns" style="grid-template-columns:1fr"><button class="btn" data-a="shExtra">Extra pay</button></div>`}<p class="foot">WorkTrack v1.28 · 28 Nov 2026</p>`}
 const CATL={b15:'×1.5',b2:'×2',s15:'×1.5 + shift',s2:'×2 + shift'};
 function otSum(from,to){const g={},days=[];for(let d=from;d<=to;d=add(d,1)){const o=otInfo(d);if(o){days.push([d,o]);const x=g[o.cat]=g[o.cat]||{m:0,p:0};x.m+=o.m;x.p+=o.pay}}
  const rows=CORD.filter(k=>g[k]).map(k=>({k,m:g[k].m,p:Math.round(g[k].p)}));return{rows,days,m:rows.reduce((a,x)=>a+x.m,0),p:rows.reduce((a,x)=>a+x.p,0)}}
@@ -486,7 +487,7 @@ function yearTable(ty){const t=todayISO();let last=null;
 const otName=x=>{const c=x.cat||(x.l===CATS.b15?'b15':x.l===CATS.b2?'b2':x.l===CATS.s15?'s15':'s2'),m=x.mul||(c[1]==='2'?2:1.5);return`Overtime ×${rT(m)}${c[0]==='s'?' + shift':''}`};
 
 function vLeave(){const B=bal(lyY),t=todayISO(),G=groups(B.days),fut=G.filter(g=>g.end>t),past=G.filter(g=>g.end<=t);
- const gl=(g,c)=>`<div class="ln"><span>${g.start===g.end?fd(g.start,{weekday:'short'}):fd(g.start)+' – '+fd(g.end)}<span class="s">${dd(g.n)} day${g.n===1?'':'s'} (${dd(g.n*S.set.dayMins/60)}h)</span></span>${c?`<button class="btn red" data-a="delLeave" data-v="${g.ds.join(',')}">Cancel</button>`:''}</div>`;
+ const gl=(g,c)=>{const dt=g.start===g.end?fd(g.start,{weekday:'short'}):fd(g.start)+' – '+fd(g.end),dy=`${dd(g.n)} day${g.n===1?'':'s'} (${dd(g.n*S.set.dayMins/60)}h)`;return`<div class="ln"><button class="lvnm" data-a="shLvName" data-v="${g.ds.join(',')}">${g.nm?`<b>${esc(g.nm)}</b><span class="s">${dt} · ${dy}</span>`:`${dt}<span class="s">${dy} · <span class="addnm">Add name</span></span>`}</button>${c?`<button class="btn red" data-a="delLeave" data-v="${g.ds.join(',')}">Cancel</button>`:''}</div>`};
  return`<div class="top c"><button class="circ" data-a="lyGo" data-v="-1" aria-label="Previous year">‹</button><div class="t"><h1>Holidays ${lyLabel(lyY)}</h1></div><button class="circ" data-a="lyGo" data-v="1" aria-label="Next year">›</button></div>
  ${B.entSet?`<div class="card hero"><div class="lab">Days left</div><div class="big">${dd(B.left)}</div><div class="lab">of ${dd(B.total)} days · ${dd(B.left*S.set.dayMins/60)} hours</div>
   <div class="bar"><i style="width:${Math.min(100,B.taken/B.total*100)}%;background:#fff"></i><i style="width:${Math.min(100,B.booked/B.total*100)}%;background:rgba(255,255,255,.55)"></i></div>
@@ -501,7 +502,7 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  const ok=FIX.length>0&&FIX.every(f=>{let g=0;for(const x of f.L)g+=Array.isArray(x)?lineAmt(x[0],x[1]):P(x);const t=taxDue(P(f.pg)+g,f.m,2026)-P(f.pt),n=niFor(g,2026);return g===P(f.g)&&t===P(f.t)&&n===P(f.n)});
  if(!blkSet){const t=todayISO(),cb=sortedBlocks().find(b=>payOf(b)>t);if(cb)blkY=+cb.pm.slice(0,4)}
  const yb=sortedBlocks().filter(b=>+b.pm.slice(0,4)===blkY),ys=[...new Set(S.blocks.map(b=>+b.pm.slice(0,4)))].sort();
- return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.26 · 26 Nov 2026</div></div></div>
+ return`<div class="top"><div class="t"><h1>Setup</h1><div class="sub">WorkTrack v1.28 · 28 Nov 2026</div></div></div>
  <div class="lbl">Salary</div>
  <div class="card"><div class="big" style="font-size:40px;margin-top:0">${money(P(cur.base))}<span class="sub" style="font-size:16px;letter-spacing:0;font-weight:600"> /month</span></div>
   <div class="sub">£${hourly(cur).toFixed(2)} an hour${ok?' · ✓ matches your last 6 payslips':''}</div>
@@ -523,7 +524,7 @@ function vSet(){const cur=baseFor(todayISO().slice(0,7)),R=[...S.rates].sort((a,
  <div class="card"><input data-bind="set.taxCode" value="${esc(S.set.taxCode)}" aria-label="Tax code" autocapitalize="characters"></div>
  <div class="lbl">Backup</div>
  <div class="card">${window.claude?'':`<button class="btn pri blk" data-a="saveBk">Save backup file</button><p class="sub" style="margin:8px 0 12px;text-align:center">${bkLast()?'Last backup '+fd(new Date(bkLast()).toISOString().slice(0,10),{year:'numeric'}):'No backup saved yet'} · save it to Files or iCloud Drive</p>`}<div class="btns" style="margin:0"><button class="btn" data-a="copyBk">Copy backup</button><button class="btn" data-a="shRestore">Restore</button></div><button class="btn blk" style="margin-top:10px" data-a="shAddSlips">Add payslips from a file</button></div>
- <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.26 · 26 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
+ <div class="lbl">App</div><div class="card"><div class="go"><div><b>Check for updates</b><div class="sub">You have v1.28 · 28 Nov 2026</div></div><button class="btn" data-a="upd">Update</button></div></div>
  <div class="foot"><span id="sync"></span><br><button class="btn red" data-a="reset">${confirmReset?'Tap again to erase everything':'Reset app'}</button></div>`}
 
 /* ================= sheets ================= */
@@ -535,7 +536,7 @@ function pvHTML(){const o=classify(SH.d,dayRec());if(!o)return'<span class="sub"
  return`<b>${money(lineAmt(o.m,o.rate))}</b> <span class="sub">· ${o.mul===2?'×2':'×1.5'}${o.elig?' + shift':''}</span>`}
 const SHEETS={
  day:()=>{const d=SH.d,b=blockOf(d),w=SH.st==='work'||SH.st==='half'||SH.st==='hrs',lv=isLv(SH.st);
-  return head(fd(d,{weekday:'long',month:'short'}),b?`Paid in ${pmName(b.pm,true).split(' ')[0]}`:'','dayGo')+
+  const nm=lv&&(S.days[d]||{}).nm;return head(fd(d,{weekday:'long',month:'short'}),(nm?esc(nm)+' · ':'')+(b?`Paid in ${pmName(b.pm,true).split(' ')[0]}`:''),'dayGo')+
   `<div class="step"><button data-a="otStep" data-v="-0.25" aria-label="Less overtime">−</button><div class="val" id="otv">${dd(parseFloat(SH.ot)||0)}h</div><button data-a="otStep" data-v="0.25" aria-label="More overtime">+</button></div>
   <div class="chips" style="justify-content:center">${['1','2','3.75','4','7.5'].map(v=>`<button data-a="otSet" data-v="${v}" class="${String(parseFloat(SH.ot)||0)===v?'on':''}">${v}h</button>`).join('')}</div>
   <div class="pv" id="pv" style="text-align:center">${pvHTML()}</div>
@@ -547,7 +548,7 @@ const SHEETS={
   :`<button class="btn link blk" data-a="dMore">Holiday, sick or shift swap</button>`}
   <button class="btn pri blk" style="margin-top:8px" data-a="dSave">Save</button>${S.days[d]?'<button class="btn red blk" data-a="dClear">Delete overtime and holiday for this day</button>':''}`},
  pick:()=>{const d=SH.d,x=S.days[d],o=otInfo(d),st=statusOf(d),b=blockOf(d);
-  const now=[o?`${hrs(o.m)} overtime`:'',isLv(st)?`Holiday ${dd(lvFrac(x)*S.set.dayMins/60)}h`:'',st==='sick'?'Sick':st==='bank'?'Bank holiday':''].filter(Boolean).join(' · ');
+  const now=[o?`${hrs(o.m)} overtime`:'',isLv(st)?`${x.nm?esc(x.nm):'Holiday'} ${dd(lvFrac(x)*S.set.dayMins/60)}h`:'',st==='sick'?'Sick':st==='bank'?'Bank holiday':''].filter(Boolean).join(' · ');
   return head(fd(d,{weekday:'long',month:'long'}),now||(st==='work'?(shiftOf(d)==='E'?'Early shift':'Late shift'):'Day off'))+
   `<button class="btn pri blk xl" data-a="pickOT">${o?'Change overtime':'+ Add overtime'}</button>
   <button class="btn blk xl" data-a="pickHol">${isLv(st)?'Change holiday':'+ Add holiday'}</button>
@@ -585,7 +586,11 @@ const SHEETS={
   `<div class="two">${f('First day',`<input type="date" id="lvF" value="${esc(SH.f||'')}">`)}${f('Last day',`<input type="date" id="lvT" value="${esc(SH.t||'')}">`)}</div>
   <div class="seg">${[['leave','Full days'],['half','Half days'],['hrs','Hours']].map(([k,l])=>`<button data-a="lvK" data-v="${k}" class="${(SH.k||'leave')===k?'on':''}">${l}</button>`).join('')}</div>
   ${SH.k==='hrs'?f('Hours each day',`<input id="lvH" inputmode="decimal" value="${esc(SH.h||'')}" placeholder="e.g. 2.5">`):''}
+  ${f('Name (optional)',`<input id="lvN" maxlength="40" value="${esc(SH.nm||'')}" placeholder="e.g. Brazil trip">`)}
   <button class="btn pri blk" data-a="book">Book</button>`,
+ lvname:()=>head('Holiday name',(()=>{const ds=SH.ds;return ds.length===1?fd(ds[0],{weekday:'short'}):fd(ds[0])+' – '+fd(ds[ds.length-1])})())+
+  `${f('Name',`<input id="lvNm" maxlength="40" value="${esc((S.days[SH.ds[0]]||{}).nm||'')}" placeholder="e.g. Brazil trip">`)}
+  <button class="btn pri blk" data-a="saveLvName">Save</button>`,
  allow:()=>{const L=leaveOf(lyY),bp=buyFor(lyY);
   return head('Allowance '+lyLabel(lyY))+
   `${f('Days in your contract',`<input id="alE" inputmode="decimal" value="${esc(L.ent??'')}" placeholder="e.g. 25">`)}
@@ -707,12 +712,14 @@ const A={
  delLine:t=>{const a=S.adj[SH.pm];if(a&&a.lines)a.lines=a.lines.filter(x=>x.id!==t.dataset.v);save();renderSheet();render()},
  shBook:()=>openSheet({type:'book',k:'leave'}),
  lvK:t=>{SH.f=val('lvF');SH.t=val('lvT');SH.h=val('lvH');SH.k=t.dataset.v;renderSheet()},
- book:()=>{const f0=val('lvF'),to=val('lvT')||f0,k=SH.k||'leave',h=parseFloat(val('lvH'));let lvm=null;
+ book:()=>{const f0=val('lvF'),to=val('lvT')||f0,k=SH.k||'leave',h=parseFloat(val('lvH')),nm=(val('lvN')||'').trim().slice(0,40);let lvm=null;
   if(k==='hrs'){if(!(h>0)||h*60>S.set.dayMins){flash(`Type hours between 0.25 and ${S.set.dayMins/60}`);return}lvm=Math.round(h*60)}
   if(!f0){flash('Pick the first day');return}if(to<f0){flash('The last day is before the first');return}if((D(to)-D(f0))/864e5>366){flash('That is longer than a year');return}
-  let n=0,dy=0;for(let d=f0;d<=to;d=add(d,1)){if(!isWD(d)||statusOf(d)==='bank')continue;setDay(d,{st:k,lvm});n++;dy+=lvFrac(S.days[d]||{st:k,lvm})}
+  let n=0,dy=0;for(let d=f0;d<=to;d=add(d,1)){if(!isWD(d)||statusOf(d)==='bank')continue;setDay(d,{st:k,lvm,nm:nm||null});n++;dy+=lvFrac(S.days[d]||{st:k,lvm})}
   save();lyY=lyOf(f0);closeSheet();render();const B=bal(lyY);flash(n?`Booked ${dd(dy*S.set.dayMins/60)}h · ${dd(B.left)} days left`:'No working days in that range')},
- delLeave:t=>{for(const d of t.dataset.v.split(','))setDay(d,{st:defSt(d),lvm:null});save();render();flash('Holiday cancelled')},
+ shLvName:t=>openSheet({type:'lvname',ds:t.dataset.v.split(',')}),
+ saveLvName:()=>{const nm=(val('lvNm')||'').trim().slice(0,40);for(const d of SH.ds)if(S.days[d]&&isLv(S.days[d].st))setDay(d,{nm:nm||null});save();closeSheet();render();flash(nm?'Name saved':'Name removed')},
+ delLeave:t=>{for(const d of t.dataset.v.split(','))setDay(d,{st:defSt(d),lvm:null,nm:null});save();render();flash('Holiday cancelled')},
  shAllow:()=>openSheet({type:'allow'}),addBuy:()=>{SH.keep={e:val('alE'),c:val('alC'),o:val('alO')};SH.addBuy=true;renderSheet();const k=SH.keep;document.getElementById('alE').value=k.e;document.getElementById('alC').value=k.c;document.getElementById('alO').value=k.o},
  delPur:t=>{S.purchases.splice(+t.dataset.v,1);save();renderSheet();render()},
  saveAllow:()=>{const e=val('alE'),c=val('alC'),o=val('alO');for(const v of[e,c,o])if(v!==''&&isNaN(parseFloat(v))){flash('Use numbers of days, e.g. 25');return}
